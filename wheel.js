@@ -265,6 +265,9 @@ function spinWheel() {
       const wonPrize = prizes[prizeIndex];
       resultText.textContent = `🎉 ربحت: ${wonPrize}`;
 
+      // 💾 حفظ بيانات الدورة في قاعدة البيانات
+      saveSpin(wonPrize);
+
       // ✅ عرض النافذة بالفوز مع اسم الزائر
       modalVisitorNameEl.textContent = currentVisitorName;
       modalPrize.textContent = wonPrize;
@@ -278,5 +281,39 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-// 🔹 11) حدث الزر
+// 🔹 11) حفظ بيانات الدورة في قاعدة البيانات
+async function saveSpin(prize) {
+  try {
+    const { data, error } = await supabaseClient
+      .from("game_spins")
+      .insert([{
+        company_id: companyId,
+        visitor_name: currentVisitorName || "زائر",
+        prize: prize,
+        won: true,
+        created_at: new Date().toISOString(),
+        session_id: getSessionId()
+      }]);
+
+    if (error) {
+      console.error("❌ خطأ في حفظ بيانات الدورة:", error);
+    } else {
+      console.log("✅ تم حفظ بيانات الدورة بنجاح");
+    }
+  } catch (err) {
+    console.error("🚨 خطأ غير متوقع:", err);
+  }
+}
+
+// 🔹 12) الحصول على Session ID فريد
+function getSessionId() {
+  let sessionId = sessionStorage.getItem('dawerha_session_id');
+  if (!sessionId) {
+    sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    sessionStorage.setItem('dawerha_session_id', sessionId);
+  }
+  return sessionId;
+}
+
+// 🔹 13) حدث الزر
 if (spinBtn) spinBtn.addEventListener("click", spinWheel);

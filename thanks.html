@@ -83,6 +83,17 @@
     .btn:hover {
       filter: brightness(1.05);
     }
+    .btn.secondary {
+      background: #2ecc71;
+      margin-top: 10px;
+    }
+    .buttons-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body class="thankyou-page">
@@ -100,7 +111,11 @@
     <!-- الباركود -->
     <canvas id="qrcode"></canvas>
 
-    <a href="index.html" class="btn">العودة للصفحة الرئيسية</a>
+    <!-- مجموعة الأزرار -->
+    <div class="buttons-group">
+      <a href="index.html" class="btn">العودة للصفحة الرئيسية</a>
+      <a href="#" id="dashboardLink" class="btn secondary" style="display:none">📊 لوحة التحكم والتقارير</a>
+    </div>
   </div>
 
   <script>
@@ -109,6 +124,18 @@
 
     if (link) {
       document.getElementById("companyLink").innerHTML = `رابط صفحتك: <br><a href="${link}" target="_blank">${link}</a>`;
+      
+      // استخراج ID الشركة من الرابط
+      const url = new URL(link);
+      const companyId = url.searchParams.get('id');
+      
+      if (companyId) {
+        // إظهار رابط لوحة التحكم
+        const dashboardLink = document.getElementById('dashboardLink');
+        dashboardLink.href = `company-dashboard.html?id=${companyId}`;
+        dashboardLink.style.display = 'inline-block';
+      }
+      
       QRCode.toCanvas(
         document.getElementById("qrcode"),
         link,
