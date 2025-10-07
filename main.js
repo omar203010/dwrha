@@ -79,7 +79,6 @@ form.addEventListener("submit", async (e) => {
   } else {
     // 🔗 روابط مهمة
     const companyUrl = `${window.location.origin}/company.html?id=${company.id}`;
-    const adminUrl = `${window.location.origin}/admin-dashboard.html`;
     const loginUrl = `${window.location.origin}/login.html`;
 
     // تحويل إلى صفحة الشكر وتمرير البيانات
@@ -88,7 +87,6 @@ form.addEventListener("submit", async (e) => {
       email: company.email,
       password: tempPassword,
       company_id: company.id,
-      admin_url: adminUrl,
       login_url: loginUrl
     });
     

@@ -31,13 +31,11 @@
       const dashboardBtn = document.getElementById('dashboardBtn');
       
       if (session && session.userType === 'company' && session.userId == companyId) {
-        // المستخدم هو المالك
+        // المستخدم هو المالك - عرض لوحة التحكم فقط
         ownerControls.style.display = 'block';
         dashboardBtn.href = `company-dashboard.html?id=${companyId}`;
-      } else {
-        // زائر عادي - عرض زر تسجيل الدخول بشكل خفيف
-        loginPrompt.style.display = 'block';
       }
+      // الزوار العاديون لا يرون أي شيء - صفحة نظيفة للعبة فقط
     });
   </script>
 </head>
@@ -60,11 +58,9 @@
       </button>
     </div>
     
-    <!-- زر تسجيل الدخول للزوار -->
-    <div id="loginPrompt" style="margin-top:15px; display:none">
-      <a href="login.html" class="btn" style="display:inline-block; padding:8px 20px; font-size:14px; background:#2ecc71; color:white">
-        🔐 تسجيل دخول المالك
-      </a>
+    <!-- زر تسجيل الدخول للزوار - مخفي -->
+    <div id="loginPrompt" style="display:none">
+      <!-- مخفي تماماً - لا يظهر للزوار -->
     </div>
   </header>
 

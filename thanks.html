@@ -124,7 +124,6 @@
     const email = params.get("email");
     const password = params.get("password");
     const companyId = params.get("company_id");
-    const adminUrl = params.get("admin_url");
     const loginUrl = params.get("login_url");
 
     if (link) {
@@ -156,9 +155,7 @@
             <p style="margin:5px 0; font-size:12px; opacity:0.9">
               <strong>صفحة العجلة:</strong> <code style="background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:3px">${link}</code>
             </p>
-            <p style="margin:5px 0; font-size:12px; opacity:0.9">
-              <strong>لوحة الإدارة:</strong> <code style="background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:3px">${adminUrl}</code>
-            </p>
+            <!-- رابط الإدارة مخفي من الشركاء -->
           </div>
           <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
             <a href="${loginUrl || 'login.html'}" style="
@@ -171,16 +168,7 @@
               font-weight:700;
             ">🔐 صفحة تسجيل الدخول</a>
             
-            <a href="${adminUrl}" target="_blank" style="
-              display:inline-block;
-              background:rgba(255,255,255,0.2);
-              color:white;
-              padding:10px 20px;
-              border-radius:8px;
-              text-decoration:none;
-              font-weight:700;
-              border:2px solid rgba(255,255,255,0.3);
-            ">🔧 لوحة الإدارة</a>
+            <!-- رابط الإدارة مخفي - لا يظهر للشركاء -->
           </div>
         `;
         

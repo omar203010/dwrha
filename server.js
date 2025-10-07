@@ -103,4 +103,5 @@ server.listen(PORT, () => {
   console.log(`📱 الرابط: http://localhost:${PORT}`);
   console.log(`🔧 لوحة الإدارة: http://localhost:${PORT}/admin`);
   console.log(`\n💡 تلميح: اضغط Ctrl+C لإيقاف الخادم`);
+  console.log(`🔒 ملاحظة: لوحة الإدارة مخفية تماماً عن الشركاء`);
 });
