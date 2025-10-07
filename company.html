@@ -26,9 +26,22 @@
     <h1 id="companyName" class="hero-title"></h1>
   </header>
 
-  <!-- مسرح العجلة -->
+  <!-- الحاوية الرئيسية -->
   <main class="stage">
-    <div class="wheel-wrap">
+    <!-- نموذج إدخال الاسم -->
+    <section id="nameSection" class="name-form-card">
+      <h2>مرحباً بك! 👋</h2>
+      <p>أدخل اسمك لتبدأ اللعب</p>
+      <form id="nameForm" class="form">
+        <label>الاسم
+          <input id="visitorName" type="text" required placeholder="اكتب اسمك هنا" style="font-size:16px;" />
+        </label>
+        <button type="submit" class="btn primary" style="width:100%;">ابدأ اللعب 🎡</button>
+      </form>
+    </section>
+
+    <!-- مسرح العجلة -->
+    <div id="wheelSection" class="wheel-wrap" style="display:none; margin-top:30px;">
       <div class="needle"></div>
       <canvas id="wheelCanvas" width="560" height="560"></canvas>
       <button id="spinBtn" class="btn primary">جرّب حظك ✨</button>
