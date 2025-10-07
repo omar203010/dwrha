@@ -77,15 +77,19 @@ form.addEventListener("submit", async (e) => {
     submitBtn.disabled = false;
     submitBtn.textContent = originalText;
   } else {
-    // 🔗 رابط مطلق كامل (يشمل دومين الموقع)
+    // 🔗 روابط مهمة
     const companyUrl = `${window.location.origin}/company.html?id=${company.id}`;
+    const adminUrl = `${window.location.origin}/admin-dashboard.html`;
+    const loginUrl = `${window.location.origin}/login.html`;
 
     // تحويل إلى صفحة الشكر وتمرير البيانات
     const params = new URLSearchParams({
       link: companyUrl,
       email: company.email,
       password: tempPassword,
-      company_id: company.id
+      company_id: company.id,
+      admin_url: adminUrl,
+      login_url: loginUrl
     });
     
     window.location.href = `thanks.html?${params.toString()}`;

@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>لوحة التحكم الإدارية | دوّرها</title>
+  
+  <!-- 🔒 إخفاء الصفحة من محركات البحث -->
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="googlebot" content="noindex, nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   
@@ -311,6 +315,19 @@
 
     // 🔐 التحقق من تسجيل دخول الإدارة
     async function checkAdminAuth() {
+      // 🔒 التحقق من أن الصفحة مفتوحة عبر /admin فقط
+      if (!window.location.pathname.includes('/admin')) {
+        // إخفاء المحتوى وإظهار رسالة خطأ
+        document.body.innerHTML = `
+          <div style="text-align:center; padding:100px; font-family:'Cairo',sans-serif;">
+            <h1 style="color:#e74c3c;">🚫 غير مسموح</h1>
+            <p>هذه الصفحة متاحة فقط عبر الرابط المخصص للإدارة</p>
+            <a href="/" style="color:var(--purple);">العودة للصفحة الرئيسية</a>
+          </div>
+        `;
+        return null;
+      }
+
       const session = await window.authSystem.requireAuth('admin');
       
       if (!session) {

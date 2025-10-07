@@ -124,6 +124,8 @@
     const email = params.get("email");
     const password = params.get("password");
     const companyId = params.get("company_id");
+    const adminUrl = params.get("admin_url");
+    const loginUrl = params.get("login_url");
 
     if (link) {
       document.getElementById("companyLink").innerHTML = `رابط صفحتك: <br><a href="${link}" target="_blank">${link}</a>`;
@@ -149,16 +151,37 @@
           <p style="margin:5px 0; font-size:13px; opacity:0.85">
             سيتم تفعيل حسابك بعد موافقة فريق دوّرها. بعدها يمكنك تسجيل الدخول لمتابعة الإحصائيات.
           </p>
-          <a href="login.html" style="
-            display:inline-block;
-            background:white;
-            color:#6A3FA0;
-            padding:10px 20px;
-            border-radius:8px;
-            text-decoration:none;
-            font-weight:700;
-            margin-top:15px;
-          ">🔐 صفحة تسجيل الدخول</a>
+          <div style="background:rgba(255,255,255,0.15); padding:15px; border-radius:8px; margin-top:15px; border:1px solid rgba(255,255,255,0.2);">
+            <h4 style="margin:0 0 10px; font-size:16px">🔗 روابط مهمة:</h4>
+            <p style="margin:5px 0; font-size:12px; opacity:0.9">
+              <strong>صفحة العجلة:</strong> <code style="background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:3px">${link}</code>
+            </p>
+            <p style="margin:5px 0; font-size:12px; opacity:0.9">
+              <strong>لوحة الإدارة:</strong> <code style="background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:3px">${adminUrl}</code>
+            </p>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+            <a href="${loginUrl || 'login.html'}" style="
+              display:inline-block;
+              background:white;
+              color:#6A3FA0;
+              padding:10px 20px;
+              border-radius:8px;
+              text-decoration:none;
+              font-weight:700;
+            ">🔐 صفحة تسجيل الدخول</a>
+            
+            <a href="${adminUrl}" target="_blank" style="
+              display:inline-block;
+              background:rgba(255,255,255,0.2);
+              color:white;
+              padding:10px 20px;
+              border-radius:8px;
+              text-decoration:none;
+              font-weight:700;
+              border:2px solid rgba(255,255,255,0.3);
+            ">🔧 لوحة الإدارة</a>
+          </div>
         `;
         
         const container = document.querySelector('.thankyou-container');

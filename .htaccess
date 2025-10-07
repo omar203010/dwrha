@@ -1,0 +1,15 @@
+# إعادة توجيه /admin إلى صفحة الإدارة
+RewriteEngine On
+
+# إعادة توجيه /admin إلى admin-dashboard.html
+RewriteRule ^admin/?$ admin-dashboard.html [L]
+
+# إعادة توجيه /admin/ إلى admin-dashboard.html
+RewriteRule ^admin/$ admin-dashboard.html [L]
+
+# حماية ملفات الإدارة من الوصول المباشر
+<Files "admin-dashboard.html">
+    # السماح فقط بالوصول عبر /admin
+    RewriteCond %{REQUEST_URI} !^/admin
+    RewriteRule ^admin-dashboard\.html$ - [F]
+</Files>
