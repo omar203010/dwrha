@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>شكرًا لتسجيلك | دوّرها</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- مكتبة QRCode -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: "Cairo", system-ui, sans-serif;
+      background: #f8f6fc;
+      margin: 0;
+      padding: 0;
+    }
+    .thankyou-page {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .thankyou-container {
+      text-align: center;
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+      max-width: 600px;
+      margin: 20px;
+      border-top: 6px solid #6A3FA0;
+    }
+    .thankyou-logo {
+      max-width: 140px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #6A3FA0;
+      margin-bottom: 10px;
+      font-size: 26px;
+    }
+    p {
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #444;
+    }
+    #companyLink {
+      margin: 15px 0;
+      font-weight: bold;
+      color: #6A3FA0;
+      word-break: break-all;
+    }
+    #companyLink a {
+      color: #6A3FA0;
+      text-decoration: none;
+    }
+    #companyLink a:hover {
+      text-decoration: underline;
+    }
+    #qrcode {
+      margin: 20px 0;
+    }
+    .note {
+      background: #f3e9ff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 15px;
+      margin-bottom: 18px;
+      color: #2e2240;
+    }
+    .btn {
+      display: inline-block;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #6A3FA0;
+      color: #fff;
+      text-decoration: none;
+    }
+    .btn:hover {
+      filter: brightness(1.05);
+    }
+  </style>
+</head>
+<body class="thankyou-page">
+  <div class="thankyou-container">
+    <img src="assets/logo-dawerha.jpeg" alt="شعار دوّرها" class="thankyou-logo" />
+    <h1>🎉 شكرًا! تم استلام طلبك بنجاح</h1>
+    <p>سيتواصل معك فريق <strong>دوّرها</strong> قريبًا لتفعيل التجربة في منشأتك.</p>
+
+    <!-- تنبيه مهم -->
+    <div class="note">⚠️ ملاحظة: صفحتك لن تعمل إلا بعد تفعيل الطلب من فريق الإدارة.</div>
+
+    <!-- الرابط -->
+    <div id="companyLink"></div>
+
+    <!-- الباركود -->
+    <canvas id="qrcode"></canvas>
+
+    <a href="index.html" class="btn">العودة للصفحة الرئيسية</a>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const link = params.get("link");
+
+    if (link) {
+      document.getElementById("companyLink").innerHTML = `رابط صفحتك: <br><a href="${link}" target="_blank">${link}</a>`;
+      QRCode.toCanvas(
+        document.getElementById("qrcode"),
+        link,
+        function (error) {
+          if (error) console.error(error);
+        }
+      );
+    }
+  </script>
+</body>
+</html>

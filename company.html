@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>دوّرها | صفحة الشركة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- مكتبة Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <!-- إعداد الاتصال -->
+  <script defer src="supabase.js"></script>
+
+  <!-- منطق العجلة -->
+  <script defer src="wheel.js"></script>
+</head>
+<body>
+  <!-- سدو علوي -->
+  <img src="assets/sadu-strip.jpeg" alt="سدو علوي" class="sadu-img">
+
+  <!-- هيدر -->
+  <header class="hero">
+    <img id="companyLogo" alt="شعار الشركة" class="hero-logo">
+    <h1 id="companyName" class="hero-title"></h1>
+  </header>
+
+  <!-- مسرح العجلة -->
+  <main class="stage">
+    <div class="wheel-wrap">
+      <div class="needle"></div>
+      <canvas id="wheelCanvas" width="560" height="560"></canvas>
+      <button id="spinBtn" class="btn primary">جرّب حظك ✨</button>
+      <div id="resultText" class="result"></div>
+    </div>
+  </main>
+
+
+  <footer class="footer">© 2025 Dawerha – جميع الحقوق محفوظة</footer>
+</body>
+</html>
