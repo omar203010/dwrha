@@ -41,7 +41,7 @@ async function loginCompany(email, password) {
       .from('sessions')
       .insert([{
         user_type: 'company',
-        user_id: company.id,
+        user_id: String(company.id), // تحويل UUID إلى نص
         email: company.email,
         token: token,
         expires_at: expiresAt.toISOString()
@@ -110,7 +110,7 @@ async function loginAdmin(email, password) {
       .from('sessions')
       .insert([{
         user_type: 'admin',
-        user_id: admin.id,
+        user_id: String(admin.id), // تحويل ID إلى نص
         email: admin.email,
         token: token,
         expires_at: expiresAt.toISOString()
