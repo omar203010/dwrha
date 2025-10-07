@@ -121,13 +121,50 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const link = params.get("link");
+    const email = params.get("email");
+    const password = params.get("password");
+    const companyId = params.get("company_id");
 
     if (link) {
       document.getElementById("companyLink").innerHTML = `رابط صفحتك: <br><a href="${link}" target="_blank">${link}</a>`;
       
-      // استخراج ID الشركة من الرابط
-      const url = new URL(link);
-      const companyId = url.searchParams.get('id');
+      // عرض بيانات تسجيل الدخول
+      if (email && password) {
+        const loginInfo = document.createElement('div');
+        loginInfo.style.cssText = `
+          background: linear-gradient(135deg, #6A3FA0 0%, #8C59C4 100%);
+          color: white;
+          padding: 20px;
+          border-radius: 12px;
+          margin: 20px 0;
+          text-align: right;
+        `;
+        loginInfo.innerHTML = `
+          <h3 style="margin-top:0; font-size:20px">🔐 بيانات تسجيل الدخول</h3>
+          <p style="margin:10px 0"><strong>البريد الإلكتروني:</strong> ${email}</p>
+          <p style="margin:10px 0"><strong>كلمة المرور المؤقتة:</strong> <code style="background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:5px; font-size:16px">${password}</code></p>
+          <p style="margin:15px 0 5px; font-size:14px; opacity:0.9">
+            ⚠️ <strong>مهم جداً:</strong> احفظ هذه البيانات في مكان آمن!
+          </p>
+          <p style="margin:5px 0; font-size:13px; opacity:0.85">
+            سيتم تفعيل حسابك بعد موافقة فريق دوّرها. بعدها يمكنك تسجيل الدخول لمتابعة الإحصائيات.
+          </p>
+          <a href="login.html" style="
+            display:inline-block;
+            background:white;
+            color:#6A3FA0;
+            padding:10px 20px;
+            border-radius:8px;
+            text-decoration:none;
+            font-weight:700;
+            margin-top:15px;
+          ">🔐 صفحة تسجيل الدخول</a>
+        `;
+        
+        const container = document.querySelector('.thankyou-container');
+        const qrElement = document.getElementById('qrcode');
+        container.insertBefore(loginInfo, qrElement);
+      }
       
       if (companyId) {
         // إظهار رابط لوحة التحكم

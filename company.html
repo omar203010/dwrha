@@ -12,9 +12,34 @@
 
   <!-- إعداد الاتصال -->
   <script defer src="supabase.js"></script>
-
+  
+  <!-- نظام المصادقة -->
+  <script defer src="auth.js"></script>
+  
   <!-- منطق العجلة -->
   <script defer src="wheel.js"></script>
+  
+  <script defer>
+    // التحقق من تسجيل دخول المالك
+    window.addEventListener('load', () => {
+      const session = window.authSystem.getCurrentSession();
+      const params = new URLSearchParams(window.location.search);
+      const companyId = params.get('id');
+      
+      const ownerControls = document.getElementById('ownerControls');
+      const loginPrompt = document.getElementById('loginPrompt');
+      const dashboardBtn = document.getElementById('dashboardBtn');
+      
+      if (session && session.userType === 'company' && session.userId == companyId) {
+        // المستخدم هو المالك
+        ownerControls.style.display = 'block';
+        dashboardBtn.href = `company-dashboard.html?id=${companyId}`;
+      } else {
+        // زائر عادي - عرض زر تسجيل الدخول بشكل خفيف
+        loginPrompt.style.display = 'block';
+      }
+    });
+  </script>
 </head>
 <body>
   <!-- سدو علوي -->
@@ -24,6 +49,23 @@
   <header class="hero">
     <img id="companyLogo" alt="شعار الشركة" class="hero-logo">
     <h1 id="companyName" class="hero-title"></h1>
+    
+    <!-- زر لوحة التحكم للمالك فقط -->
+    <div id="ownerControls" style="margin-top:15px; display:none">
+      <a href="#" id="dashboardBtn" class="btn primary" style="display:inline-block; padding:8px 20px; font-size:14px">
+        📊 لوحة التحكم والتقارير
+      </a>
+      <button onclick="window.authSystem.logout()" class="btn" style="background:#e74c3c; color:white; padding:8px 15px; font-size:14px; margin-right:10px">
+        🚪 تسجيل الخروج
+      </button>
+    </div>
+    
+    <!-- زر تسجيل الدخول للزوار -->
+    <div id="loginPrompt" style="margin-top:15px; display:none">
+      <a href="login.html" class="btn" style="display:inline-block; padding:8px 20px; font-size:14px; background:#2ecc71; color:white">
+        🔐 تسجيل دخول المالك
+      </a>
+    </div>
   </header>
 
   <!-- الحاوية الرئيسية -->

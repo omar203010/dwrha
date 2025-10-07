@@ -15,6 +15,7 @@
   
   <!-- إعداد الاتصال -->
   <script defer src="supabase.js"></script>
+  <script defer src="auth.js"></script>
   
   <style>
     .dashboard {
@@ -141,6 +142,7 @@
       <div>
         <button class="export-btn" onclick="exportToCSV()">📥 تصدير CSV</button>
         <a href="company.html" id="backToWheel" class="btn primary" style="margin-right:10px">🎡 العودة للعجلة</a>
+        <button onclick="window.authSystem.logout()" class="btn" style="background:#e74c3c; color:white; margin-right:10px">🚪 تسجيل الخروج</button>
       </div>
     </div>
 
@@ -204,6 +206,27 @@
 
     const companyId = getCompanyId();
 
+    // 🔐 التحقق من تسجيل الدخول
+    async function checkAuth() {
+      const session = await window.authSystem.requireAuth('company');
+      
+      if (!session) {
+        return; // سيتم إعادة التوجيه تلقائياً
+      }
+
+      // التحقق من أن المستخدم يصل لبياناته فقط
+      if (session.userId != companyId) {
+        alert('ليس لديك صلاحية لعرض بيانات هذه الشركة');
+        window.location.href = `company-dashboard.html?id=${session.userId}`;
+        return;
+      }
+
+      // عرض اسم المستخدم في الهيدر
+      document.getElementById('companyNameHeader').textContent = session.name;
+
+      return session;
+    }
+
     if (!companyId) {
       document.body.innerHTML = `
         <h2 style="text-align:center; color:#e74c3c; margin-top:60px;">
@@ -211,10 +234,15 @@
         </h2>
       `;
     } else {
-      // تحديث رابط العودة للعجلة
-      document.getElementById('backToWheel').href = `company.html?id=${companyId}`;
-      
-      loadDashboard();
+      // التحقق من المصادقة ثم تحميل البيانات
+      checkAuth().then(session => {
+        if (session) {
+          // تحديث رابط العودة للعجلة
+          document.getElementById('backToWheel').href = `company.html?id=${companyId}`;
+          
+          loadDashboard();
+        }
+      });
     }
 
     // 🔹 تحميل بيانات لوحة التحكم
