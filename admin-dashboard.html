@@ -19,7 +19,6 @@
   
   <!-- إعداد الاتصال -->
   <script defer src="supabase.js"></script>
-  <script defer src="auth.js"></script>
   
   <style>
     :root {
@@ -214,21 +213,8 @@
 <body>
   <!-- هيدر إداري -->
   <div class="admin-header">
-    <h1>🔐 لوحة التحكم</h1>
+    <h1>🔐 لوحة التحكم الإدارية</h1>
     <p id="adminName">مرحباً بك في لوحة التحكم</p>
-    <button onclick="window.authSystem.logout()" style="
-      position:absolute;
-      top:20px;
-      left:20px;
-      background:rgba(255,255,255,0.2);
-      color:white;
-      border:none;
-      padding:8px 15px;
-      border-radius:8px;
-      cursor:pointer;
-      font-family:'Cairo',sans-serif;
-      font-weight:700;
-    ">🚪 تسجيل الخروج</button>
   </div>
 
   <div class="dashboard">
@@ -312,33 +298,6 @@
   <script>
     let allCompaniesData = [];
     let allSpinsData = [];
-
-    // 🔐 التحقق من تسجيل دخول الإدارة
-    async function checkAdminAuth() {
-      // 🔒 التحقق من أن الصفحة مفتوحة عبر /admin فقط
-      if (!window.location.pathname.includes('/admin')) {
-        // إخفاء المحتوى وإظهار رسالة خطأ
-        document.body.innerHTML = `
-          <div style="text-align:center; padding:100px; font-family:'Cairo',sans-serif;">
-            <h1 style="color:#e74c3c;">🚫 غير مسموح</h1>
-            <p>هذه الصفحة متاحة فقط عبر الرابط المخصص للإدارة</p>
-            <a href="/" style="color:var(--purple);">العودة للصفحة الرئيسية</a>
-          </div>
-        `;
-        return null;
-      }
-
-      const session = await window.authSystem.requireAuth('admin');
-      
-      if (!session) {
-        return null; // سيتم إعادة التوجيه تلقائياً
-      }
-
-      // عرض اسم المسؤول
-      document.getElementById('adminName').textContent = `مرحباً ${session.name} - ${session.role === 'super_admin' ? 'مدير عام' : 'مدير'}`;
-
-      return session;
-    }
 
     // 🔹 تحميل البيانات الإدارية
     async function loadAdminDashboard() {
@@ -583,12 +542,8 @@
       link.click();
     }
 
-    // التحقق من المصادقة ثم تحميل البيانات
-    checkAdminAuth().then(session => {
-      if (session) {
-        loadAdminDashboard();
-      }
-    });
+    // تحميل البيانات مباشرة
+    loadAdminDashboard();
   </script>
 </body>
 </html>

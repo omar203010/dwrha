@@ -20,24 +20,6 @@ function generateColors(count = 6) {
   return shuffled.slice(0, count);
 }
 
-// 🔐 دالة توليد كلمة مرور عشوائية
-function generatePassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  const special = '@#$%';
-  let password = 'Dwrha';
-  for (let i = 0; i < 6; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  password += special.charAt(Math.floor(Math.random() * special.length));
-  password += new Date().getFullYear();
-  return password;
-}
-
-// 🔐 دالة تشفير كلمة المرور (نفس الطريقة في auth.js)
-function hashPassword(password) {
-  return btoa(password + '_dawerha_salt_2025');
-}
-
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const submitBtn = form.querySelector('button[type="submit"]');
@@ -53,9 +35,6 @@ form.addEventListener("submit", async (e) => {
   // 🎨 توليد ألوان تلقائياً بناءً على عدد الجوائز
   const colors = generateColors(prizes.length);
 
-  // 🔐 توليد كلمة مرور مؤقتة
-  const tempPassword = generatePassword();
-
   const { data: company, error } = await supabaseClient
     .from("companies")
     .insert([{
@@ -65,9 +44,8 @@ form.addEventListener("submit", async (e) => {
       phone: data.get("phone"),
       prizes: prizes,
       colors: colors,
-      password_hash: hashPassword(tempPassword),
-      is_active: false, // ستُفعّل بعد موافقة الإدارة
-      status: "pending"
+      is_active: true, // تفعيل مباشر بدون موافقة
+      status: "approved" // موافقة تلقائية
     }])
     .select()
     .single();
@@ -77,17 +55,13 @@ form.addEventListener("submit", async (e) => {
     submitBtn.disabled = false;
     submitBtn.textContent = originalText;
   } else {
-    // 🔗 روابط مهمة
+    // 🔗 رابط الشركة
     const companyUrl = `${window.location.origin}/company.html?id=${company.id}`;
-    const loginUrl = `${window.location.origin}/login.html`;
 
     // تحويل إلى صفحة الشكر وتمرير البيانات
     const params = new URLSearchParams({
       link: companyUrl,
-      email: company.email,
-      password: tempPassword,
-      company_id: company.id,
-      login_url: loginUrl
+      company_id: company.id
     });
     
     window.location.href = `thanks.html?${params.toString()}`;

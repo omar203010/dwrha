@@ -99,11 +99,8 @@
 <body class="thankyou-page">
   <div class="thankyou-container">
     <img src="assets/logo-dawerha.jpeg" alt="شعار دوّرها" class="thankyou-logo" />
-    <h1>🎉 شكرًا! تم استلام طلبك بنجاح</h1>
-    <p>سيتواصل معك فريق <strong>دوّرها</strong> قريبًا لتفعيل التجربة في منشأتك.</p>
-
-    <!-- تنبيه مهم -->
-    <div class="note">⚠️ ملاحظة: صفحتك لن تعمل إلا بعد تفعيل الطلب من فريق الإدارة.</div>
+    <h1>🎉 شكرًا! تم تسجيل شركتك بنجاح</h1>
+    <p>صفحتك جاهزة الآن! يمكنك مشاركة الرابط والباركود مع عملائك.</p>
 
     <!-- الرابط -->
     <div id="companyLink"></div>
@@ -114,74 +111,30 @@
     <!-- مجموعة الأزرار -->
     <div class="buttons-group">
       <a href="index.html" class="btn">العودة للصفحة الرئيسية</a>
-      <a href="#" id="dashboardLink" class="btn secondary" style="display:none">📊 لوحة التحكم والتقارير</a>
+      <a href="#" id="companyPageLink" class="btn secondary">🎡 عرض صفحتك</a>
+      <a href="#" id="dashboardLink" class="btn secondary">📊 لوحة التحكم والتقارير</a>
     </div>
   </div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const link = params.get("link");
-    const email = params.get("email");
-    const password = params.get("password");
     const companyId = params.get("company_id");
-    const loginUrl = params.get("login_url");
 
     if (link) {
-      document.getElementById("companyLink").innerHTML = `رابط صفحتك: <br><a href="${link}" target="_blank">${link}</a>`;
+      document.getElementById("companyLink").innerHTML = `
+        <strong style="color:#6A3FA0; font-size:18px">🔗 رابط صفحتك:</strong><br>
+        <a href="${link}" target="_blank" style="font-size:16px">${link}</a>
+      `;
       
-      // عرض بيانات تسجيل الدخول
-      if (email && password) {
-        const loginInfo = document.createElement('div');
-        loginInfo.style.cssText = `
-          background: linear-gradient(135deg, #6A3FA0 0%, #8C59C4 100%);
-          color: white;
-          padding: 20px;
-          border-radius: 12px;
-          margin: 20px 0;
-          text-align: right;
-        `;
-        loginInfo.innerHTML = `
-          <h3 style="margin-top:0; font-size:20px">🔐 بيانات تسجيل الدخول</h3>
-          <p style="margin:10px 0"><strong>البريد الإلكتروني:</strong> ${email}</p>
-          <p style="margin:10px 0"><strong>كلمة المرور المؤقتة:</strong> <code style="background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:5px; font-size:16px">${password}</code></p>
-          <p style="margin:15px 0 5px; font-size:14px; opacity:0.9">
-            ⚠️ <strong>مهم جداً:</strong> احفظ هذه البيانات في مكان آمن!
-          </p>
-          <p style="margin:5px 0; font-size:13px; opacity:0.85">
-            سيتم تفعيل حسابك بعد موافقة فريق دوّرها. بعدها يمكنك تسجيل الدخول لمتابعة الإحصائيات.
-          </p>
-          <div style="background:rgba(255,255,255,0.15); padding:15px; border-radius:8px; margin-top:15px; border:1px solid rgba(255,255,255,0.2);">
-            <h4 style="margin:0 0 10px; font-size:16px">🔗 روابط مهمة:</h4>
-            <p style="margin:5px 0; font-size:12px; opacity:0.9">
-              <strong>صفحة العجلة:</strong> <code style="background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:3px">${link}</code>
-            </p>
-            <!-- رابط الإدارة مخفي من الشركاء -->
-          </div>
-          <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
-            <a href="${loginUrl || 'login.html'}" style="
-              display:inline-block;
-              background:white;
-              color:#6A3FA0;
-              padding:10px 20px;
-              border-radius:8px;
-              text-decoration:none;
-              font-weight:700;
-            ">🔐 صفحة تسجيل الدخول</a>
-            
-            <!-- رابط الإدارة مخفي - لا يظهر للشركاء -->
-          </div>
-        `;
-        
-        const container = document.querySelector('.thankyou-container');
-        const qrElement = document.getElementById('qrcode');
-        container.insertBefore(loginInfo, qrElement);
-      }
+      // تحديث رابط صفحة الشركة
+      const companyPageLink = document.getElementById('companyPageLink');
+      companyPageLink.href = link;
       
       if (companyId) {
-        // إظهار رابط لوحة التحكم
+        // تحديث رابط لوحة التحكم
         const dashboardLink = document.getElementById('dashboardLink');
         dashboardLink.href = `company-dashboard.html?id=${companyId}`;
-        dashboardLink.style.display = 'inline-block';
       }
       
       QRCode.toCanvas(
