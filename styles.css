@@ -26,33 +26,34 @@ background:url("assets/sadu-strip.jpeg") center/contain repeat-x;
 
 /* هيدر */
 .hero-logo {
-  width: 200px;              /* زيدنا الحجم */
+  width: 200px;
   max-height: 100px;
   height: auto;
   display: block;
   margin: 0 auto 14px;
 
-  /* تأثيرات لزيادة الجمال والوضوح */
+  /* تغميق اللون وإبراز البنفسجي */
   filter:
-    brightness(1.1)           /* يرفع الإضاءة قليلاً */
-    contrast(1.3)             /* يزيد التباين لتغميق اللون */
-    saturate(1.6)             /* يعزز التشبّع اللوني */
-    drop-shadow(0 0 10px rgba(106, 63, 160, 0.55)) /* توهج داخلي ناعم */
-    drop-shadow(0 0 25px rgba(106, 63, 160, 0.4)); /* توهج خارجي أنيق */
+    brightness(1.05)
+    contrast(1.4)
+    saturate(1.8)
+    drop-shadow(0 0 10px rgba(90, 44, 160, 0.7))  /* بنفسجي غامق */
+    drop-shadow(0 0 22px rgba(90, 44, 160, 0.45));
 
   transition: transform 0.35s ease, filter 0.4s ease;
 }
 
-/* عند التحويم بالماوس */
+/* عند التحويم */
 .hero-logo:hover {
   transform: scale(1.08);
   filter:
-    brightness(1.25)
-    contrast(1.35)
-    saturate(1.7)
-    drop-shadow(0 0 18px rgba(106, 63, 160, 0.8))
-    drop-shadow(0 0 36px rgba(106, 63, 160, 0.5));
+    brightness(1.15)
+    contrast(1.5)
+    saturate(2)
+    drop-shadow(0 0 20px rgba(90, 44, 160, 0.85))
+    drop-shadow(0 0 40px rgba(90, 44, 160, 0.55));
 }
+
 
 
 /* العنوان */
