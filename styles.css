@@ -33,7 +33,16 @@ radial-gradient(1200px 500px at 90% 20%, rgba(255,255,255,.6), transparent 60%),
 linear-gradient(135deg, #F7EDFF 0%, #EBD9FF 50%, #F7EDFF 100%);
 border-bottom: 1px solid rgba(0,0,0,.04);
 }
-.hero-logo{width:150px; max-height:70px; height:auto; display:block; margin:0 auto 10px; mix-blend-mode:multiply; filter:contrast(1.1)}
+.hero-logo {
+  width:150px;
+  max-height:70px;
+  height:auto;
+  display:block;
+  margin:0 auto 10px;
+  filter:contrast(1.1) brightness(1.3) invert(0) saturate(1.2) drop-shadow(0 0 2px rgba(0,0,0,0.1));
+  mix-blend-mode: screen; /* يجعل الأسود شفاف */
+}
+
 .hero-title{margin:0; font-weight:900; font-size:26px; line-height:1.6}
 
 /* مسرح العجلة */
