@@ -1,25 +1,11 @@
-/* 🎡 إعداد الألوان */
-:root {
-  --purple: #5A2CA0;     /* درجة بنفسجي غامق فخم */
-  --purple-2: #8C59C4;
-  --ink: #2E2240;
-  --bg: #F7EDFF;
-  --white: #fff;
+:root{
+--purple:#6A3FA0;
+--purple-2:#8C59C4;
+--ink:#2E2240;
+--bg:#F3E9FF;
+--white:#fff;
 }
-
-/* 💠 تهيئة عامة */
-* { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  padding: 0;
-}
-body {
-  font-family: "Cairo", system-ui, Arial;
-  background: var(--bg);
-  color: var(--ink);
-}
-
-/* 🧵 سدو */
+/* سدو كصورة */
 .sadu-img {
   width: 100%;
   height: 42px;
@@ -27,76 +13,126 @@ body {
   display: block;
 }
 
-/* 🟣 الهيدر */
-.hero {
-  text-align: center;
-  padding: 40px 16px 50px;
-  background:
-    radial-gradient(1000px 400px at 90% 20%, rgba(255,255,255,.6), transparent 60%),
-    linear-gradient(135deg, #F7EDFF 0%, #EBD9FF 50%, #F7EDFF 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, .05);
-  position: relative;
-  overflow: hidden;
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Cairo",system-ui,Arial;background:var(--bg);color:var(--ink)}
+
+/* شريط السدو (عدلي الاسم لو ملفك مختلف) */
+.sadu-strip{
+height:42px;
+background:url("assets/sadu-strip.jpeg") center/contain repeat-x;
 }
 
-/* ✨ اللوقو */
+/* هيدر */
+.hero{
+padding:20px 16px 28px;
+text-align:center;
+background:
+radial-gradient(1200px 500px at 90% 20%, rgba(255,255,255,.6), transparent 60%),
+linear-gradient(135deg, #F7EDFF 0%, #EBD9FF 50%, #F7EDFF 100%);
+border-bottom: 1px solid rgba(0,0,0,.04);
+}
 .hero-logo {
-  width: 220px;
-  max-height: 120px;
-  height: auto;
-  display: block;
-  margin: 0 auto 16px;
-
-  /* إبراز اللون والتوهج */
-  filter:
-    brightness(1.1)
-    contrast(1.4)
-    saturate(1.9)
-    drop-shadow(0 0 12px rgba(90, 44, 160, 0.7))
-    drop-shadow(0 0 28px rgba(90, 44, 160, 0.45));
-
-  transition: transform 0.4s ease, filter 0.4s ease;
-  animation: logoFadeIn 1.2s ease-out forwards;
+  width:150px;
+  max-height:70px;
+  height:auto;
+  display:block;
+  color: #6A3FA0;
+  margin:0 auto 10px;
+  filter:contrast(1.1) brightness(1.3) invert(0) saturate(1.2) drop-shadow(0 0 2px rgba(0,0,0,0.1));
+  mix-blend-mode: screen; /* يجعل الأسود شفاف */
 }
 
-.hero-logo:hover {
-  transform: scale(1.08);
-  filter:
-    brightness(1.2)
-    contrast(1.5)
-    saturate(2)
-    drop-shadow(0 0 22px rgba(90, 44, 160, 0.85))
-    drop-shadow(0 0 40px rgba(90, 44, 160, 0.55));
+.hero-title{margin:0; font-weight:900; font-size:26px; line-height:1.6}
+
+/* مسرح العجلة */
+.stage{max-width:1100px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;align-items:center}
+.wheel-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px}
+
+/* بطاقة نموذج الاسم */
+.name-form-card{
+  background:#fff;
+  border-radius:16px;
+  padding:30px 40px;
+  max-width:500px;
+  width:100%;
+  box-shadow:0 8px 24px rgba(106,63,160,0.15);
+  text-align:center;
+  border:2px solid rgba(106,63,160,0.1);
+}
+.name-form-card h2{margin-top:0;margin-bottom:10px;color:var(--purple);font-size:28px}
+.name-form-card p{color:#666;margin-bottom:20px;font-size:16px}
+
+/* مؤشر أعلى العجلة */
+.needle{
+position:absolute; top:-6px; right:50%; transform:translateX(50%);
+width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:20px solid #2F1D52;
+z-index:5;
+filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
-@keyframes logoFadeIn {
-  0% { opacity: 0; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1); }
+/* العجلة نفسها */
+#wheelCanvas{
+  border-radius:50%;
+  box-shadow:0 10px 40px rgba(0,0,0,0.25), 0 0 0 8px #fff, 0 0 0 10px rgba(106,63,160,0.1);
+  background:#fff;
 }
 
-/* 🎆 العنوان والنص */
-.hero-title {
-  margin: 0;
-  font-weight: 900;
-  font-size: 32px;
-  color: var(--purple);
-  text-shadow: 0 0 10px rgba(90, 44, 160, 0.25);
-}
+/* أزرار ونصوص */
+.btn{display:inline-block;border:0;border-radius:12px;padding:12px 18px;font-weight:900;cursor:pointer;text-decoration:none;transition:all 0.3s ease;font-size:16px}
+.btn.primary{background:var(--purple);color:var(--white);box-shadow:0 4px 12px rgba(106,63,160,0.3)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(106,63,160,0.4)}
+.btn.primary:active{transform:translateY(0)}
+.btn.primary:disabled{opacity:0.8;cursor:not-allowed;transform:none}
+.result{min-height:28px;font-size:24px;font-weight:900;color:var(--purple);margin-top:10px}
 
-.hero p {
-  margin-top: 8px;
-  font-size: 18px;
-  color: #5a4b70;
-  font-weight: 600;
-  max-width: 650px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.8;
-}
+/* فورم */
+.form-section{max-width:880px;margin:16px auto 28px;background:#fff;border-radius:18px;padding:22px;
+box-shadow:0 12px 28px rgba(0,0,0,.06)}
+.form-section h2{margin-top:0;text-align:center}
+.form-section p{text-align:center;color:#666}
+.form{margin-top:8px;display:flex;flex-direction:column;gap:14px;max-width:450px;margin-left:auto;margin-right:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid .full{grid-column:1 / -1}
+label{display:flex;flex-direction:column;gap:6px;font-weight:700}
+input,select,textarea{padding:12px;border:1px solid #ddd;border-radius:10px;font-family:inherit;transition:border-color 0.3s ease}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple)}
+.actions{display:flex;justify-content:center;margin-top:8px}
 
-/* 📱 استجابة */
-@media (max-width: 900px) {
-  .hero-logo { width: 160px; max-height: 90px; }
-  .hero-title { font-size: 24px; }
-  .hero p { font-size: 16px; }
+/* مودال */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:99}
+.card{background:#fff;border-radius:18px;padding:22px;max-width:420px;width:92%;text-align:center;
+box-shadow:0 18px 36px rgba(0,0,0,.18)}
+.card h3{margin:0 0 8px}
+.card p{margin:0 0 16px}
+.card .actions{display:flex;justify-content:center;gap:10px}
+
+/* فوتر */
+.footer{text-align:center;color:#7f7393;margin:28px 0}
+
+/* صفحة الشكر */
+.thankyou-page{
+display:flex;justify-content:center;align-items:center;min-height:100vh;
+background:#f8f6fc;
+}
+.thankyou-container{
+text-align:center;background:#fff;padding:40px 30px;border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.1);max-width:600px;margin:auto
+}
+.thankyou-logo{max-width:140px;margin-bottom:20px}
+.thankyou-container h1{color:#5A2CA0;margin-bottom:10px}
+.thankyou-container p{font-size:18px;line-height:1.8;margin-bottom:20px;color:#444}
+
+/* استجابة */
+@media (max-width:900px){
+.hero-logo{ width:120px; max-height:60px }
+.hero-title{ font-size:22px }
+}
+@media (max-width:720px){
+#wheelCanvas{width:90vw;height:90vw;max-width:400px;max-height:400px}
+.grid{grid-template-columns:1fr}
+.name-form-card{padding:25px 20px;margin:0 10px}
+.wheel-wrap{margin-top:20px!important}
+.stage{padding:16px 10px}
 }
