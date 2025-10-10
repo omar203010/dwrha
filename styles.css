@@ -25,39 +25,40 @@ body {
 
 /* اللوقو */
 .hero-logo {
-  width: 220px;
-  max-height: 120px;
+  width: 260px;          /* ✅ تكبير اللوقو */
+  max-height: 140px;
   height: auto;
   display: block;
-  margin: 0 auto 16px;
+  margin: 0 auto 18px;
 
-  /* تصحيح اللون للدرجة الأصلية الواضحة */
+  /* ✅ لون أوضح وأغمق بدون أي توهج */
   filter:
-    brightness(1.05)
-    contrast(1.35)
-    saturate(1.8);
+    brightness(0.9)       /* يقلل السطوع لتغميق اللون */
+    contrast(1.4)         /* يعزز التباين */
+    saturate(2);          /* يقوي درجة البنفسجي */
 
-  transition: transform 0.4s ease, filter 0.4s ease;
+  transition: transform 0.35s ease, filter 0.35s ease;
 }
 
-/* تأثير خفيف عند المرور */
+/* ✅ عند مرور الماوس */
 .hero-logo:hover {
-  transform: scale(1.06);
+  transform: scale(1.08);
   filter:
-    brightness(1.15)
-    contrast(1.4)
-    saturate(2);
+    brightness(1.0)
+    contrast(1.45)
+    saturate(2.2);
 }
 
 /* الهيدر */
 .hero {
   text-align: center;
-  padding: 40px 16px 50px;
+  padding: 45px 16px 55px;
   background:
-    radial-gradient(900px 400px at 90% 20%, rgba(255, 255, 255, .6), transparent 60%),
-    linear-gradient(135deg, #F7EDFF 0%, #EBD9FF 50%, #F7EDFF 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, .05);
+    radial-gradient(900px 400px at 90% 20%, rgba(255,255,255,.6), transparent 60%),
+    linear-gradient(135deg, #F6E8FF 0%, #E7D4FF 50%, #F6E8FF 100%);
+  border-bottom: 1px solid rgba(0,0,0,.05);
 }
+
 
 /* النص الرئيسي */
 .hero-title {
