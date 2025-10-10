@@ -4,7 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>دوّرها | منصة الجوائز التفاعلية</title>
+
+  <!-- خطوط -->
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- ملف التنسيق -->
   <link rel="stylesheet" href="styles.css" />
 
   <!-- مكتبة Supabase -->
@@ -13,58 +17,67 @@
   <!-- إعداد الاتصال -->
   <script defer src="supabase.js"></script>
 
-  <!-- سكربت معالجة النموذج -->
+  <!-- سكربت النموذج -->
   <script defer src="main.js"></script>
 </head>
 <body>
 
-  <!-- سدو علوي -->
+  <!-- شريط السدو العلوي -->
   <img src="assets/sadu-strip.jpeg" alt="سدو علوي" class="sadu-img">
 
-  <!-- هيدر -->
+  <!-- الهيدر -->
   <header class="hero">
     <img src="assets/logo_dwrha.png" alt="شعار دوّرها" class="hero-logo">
-    <h1 class="hero-title">🎡 دوّرها | منصتك لابتكار تجارب فريدة مع عملاءك</h1>
-    <p>سجّل شركتك معنا واحصل على صفحة خاصة مع عجلة تفاعلية وجوائزك الخاصة ✨</p>
+    <h1 class="hero-title">🎡 دوّرها | منصتك لابتكار تجارب فريدة مع عملائك</h1>
+    <p class="hero-subtitle">سجّل شركتك معنا واحصل على صفحة خاصة مع عجلة تفاعلية وجوائزك الخاصة ✨</p>
   </header>
 
-  <!-- فورم التسجيل -->
+  <!-- قسم التسجيل -->
   <section class="form-section" id="form">
     <h2>سجّل اهتمامك</h2>
-    <p style="text-align:center; color:#6A3FA0; font-weight:600; margin-bottom:15px;">⭐ هذه الصفحة مخصصة للشركات فقط</p>
+    <p class="form-note">⭐ هذه الصفحة مخصصة للشركات فقط</p>
+
     <form id="leadForm" class="form">
       <div class="grid">
+
         <label>نوع الجهة
           <select name="type" required>
+            <option value="">اختر نوع الجهة</option>
             <option value="hotel">فندق</option>
-            <option value="restaurant">مطعم/مقهى</option>
+            <option value="restaurant">مطعم / مقهى</option>
             <option value="event">فعالية</option>
             <option value="other">أخرى</option>
           </select>
         </label>
 
         <label>اسم الجهة
-          <input name="company" required />
+          <input name="company" placeholder="مثال: فندق الرمال الذهبية" required />
         </label>
 
         <label>البريد الإلكتروني
-          <input type="email" name="email" required />
+          <input type="email" name="email" placeholder="example@email.com" required />
         </label>
 
         <label>رقم التواصل
-          <input name="phone" />
+          <input type="tel" name="phone" placeholder="05xxxxxxxx" />
         </label>
 
         <label class="full">الجوائز (افصل بينها بفاصلة ,)
           <textarea name="prizes" placeholder="خصم 10%, خصم 20%, قسيمة, هدية مجانية"></textarea>
         </label>
+
       </div>
 
-      <button type="submit" class="btn primary">إرسال</button>
+      <div class="actions">
+        <button type="submit" class="btn primary">إرسال</button>
+      </div>
     </form>
   </section>
 
+  <!-- الفوتر -->
+  <footer class="footer">
+    © 2025 <strong>Dawerha</strong> – جميع الحقوق محفوظة
+  </footer>
 
-  <footer class="footer">© 2025 Dawerha – جميع الحقوق محفوظة</footer>
 </body>
 </html>
