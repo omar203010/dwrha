@@ -44,8 +44,8 @@ form.addEventListener("submit", async (e) => {
       phone: data.get("phone"),
       prizes: prizes,
       colors: colors,
-      is_active: true, // تفعيل مباشر بدون موافقة
-      status: "approved" // موافقة تلقائية
+      is_active: false, // يحتاج تفعيل من الإدارة
+      status: "pending" // في انتظار الموافقة
     }])
     .select()
     .single();
@@ -58,10 +58,9 @@ form.addEventListener("submit", async (e) => {
     // 🔗 رابط الشركة
     const companyUrl = `${window.location.origin}/company.html?id=${company.id}`;
 
-    // تحويل إلى صفحة الشكر وتمرير البيانات
+    // تحويل إلى صفحة الشكر وتمرير الرابط فقط
     const params = new URLSearchParams({
-      link: companyUrl,
-      company_id: company.id
+      link: companyUrl
     });
     
     window.location.href = `thanks.html?${params.toString()}`;

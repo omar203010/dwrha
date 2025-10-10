@@ -99,8 +99,11 @@
 <body class="thankyou-page">
   <div class="thankyou-container">
     <img src="assets/logo-dawerha.jpeg" alt="شعار دوّرها" class="thankyou-logo" />
-    <h1>🎉 شكرًا! تم تسجيل شركتك بنجاح</h1>
-    <p>صفحتك جاهزة الآن! يمكنك مشاركة الرابط والباركود مع عملائك.</p>
+    <h1>🎉 شكرًا! تم استلام طلبك بنجاح</h1>
+    <p>سيتواصل معك فريق <strong>دوّرها</strong> قريبًا لتفعيل التجربة في منشأتك.</p>
+
+    <!-- تنبيه مهم -->
+    <div class="note">⚠️ ملاحظة: صفحتك لن تعمل إلا بعد تفعيل الطلب من فريق الإدارة.</div>
 
     <!-- الرابط -->
     <div id="companyLink"></div>
@@ -111,31 +114,18 @@
     <!-- مجموعة الأزرار -->
     <div class="buttons-group">
       <a href="index.html" class="btn">العودة للصفحة الرئيسية</a>
-      <a href="#" id="companyPageLink" class="btn secondary">🎡 عرض صفحتك</a>
-      <a href="#" id="dashboardLink" class="btn secondary">📊 لوحة التحكم والتقارير</a>
     </div>
   </div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const link = params.get("link");
-    const companyId = params.get("company_id");
 
     if (link) {
       document.getElementById("companyLink").innerHTML = `
-        <strong style="color:#6A3FA0; font-size:18px">🔗 رابط صفحتك:</strong><br>
+        <strong style="color:#6A3FA0; font-size:18px">🔗 رابط صفحتك (سيعمل بعد التفعيل):</strong><br>
         <a href="${link}" target="_blank" style="font-size:16px">${link}</a>
       `;
-      
-      // تحديث رابط صفحة الشركة
-      const companyPageLink = document.getElementById('companyPageLink');
-      companyPageLink.href = link;
-      
-      if (companyId) {
-        // تحديث رابط لوحة التحكم
-        const dashboardLink = document.getElementById('dashboardLink');
-        dashboardLink.href = `company-dashboard.html?id=${companyId}`;
-      }
       
       QRCode.toCanvas(
         document.getElementById("qrcode"),
