@@ -38,7 +38,7 @@ border-bottom: 1px solid rgba(0,0,0,.04);
   max-height:70px;
   height:auto;
   display:block;
-  color: #6A3FA0;
+  color: #27232c;
   margin:0 auto 10px;
   filter:contrast(1.1) brightness(1.3) invert(0) saturate(1.2) drop-shadow(0 0 2px rgba(0,0,0,0.1));
   mix-blend-mode: screen; /* يجعل الأسود شفاف */
