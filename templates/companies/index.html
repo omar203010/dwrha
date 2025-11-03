@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}دوّرها | منصة الجوائز التفاعلية{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+
+<header class="hero">
+    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
+    <h1 class="hero-title fade-in">🎡 دوّرها | منصتك لابتكار تجارب فريدة مع عملاءك</h1>
+    <p class="fade-in">سجّل شركتك معنا واحصل على صفحة خاصة مع عجلة تفاعلية وجوائزك الخاصة ✨</p>
+</header>
+
+<!-- Registration Form -->
+<section class="form-section fade-in" id="form">
+    <h2>سجّل اهتمامك</h2>
+    <p class="form-note">⭐ هذه الصفحة مخصصة للشركات فقط</p>
+    
+    <form id="leadForm" class="form">
+        {% csrf_token %}
+        <div class="grid">
+            <label>
+                نوع الجهة
+                <select name="type" id="typeSelect" required>
+                    <option value="restaurant">مطعم</option>
+                    <option value="resort">منتجع</option>
+                    <option value="hotel">فندق</option>
+                    <option value="coffee">كوفي</option>
+                    <option value="cafe">مقهى</option>
+                    <option value="event">فعالية</option>
+                    <option value="other">أخرى</option>
+                </select>
+            </label>
+
+            <label>
+                اسم الجهة
+                <input name="company" required>
+            </label>
+
+            <label id="customTypeLabel" class="full" style="display: none;">
+                اكتب نوع الجهة
+                <input name="customType" id="customTypeInput" placeholder="مثال: صالون، عيادة، متجر...">
+            </label>
+
+            <label>
+                البريد الإلكتروني
+                <input type="email" name="email" required>
+            </label>
+
+            <label>
+                رقم التواصل
+                <input name="phone">
+            </label>
+
+            <label class="full">
+                الجوائز (افصل بينها بفاصلة ,)
+                <textarea name="prizes" placeholder="خصم 10%, خصم 20%, قسيمة, هدية مجانية"></textarea>
+            </label>
+        </div>
+
+        <button type="submit" class="btn primary">إرسال</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Elements
+const form = document.getElementById("leadForm");
+const typeSelect = document.getElementById("typeSelect");
+const customTypeLabel = document.getElementById("customTypeLabel");
+const customTypeInput = document.getElementById("customTypeInput");
+
+/**
+ * Handle type selection change
+ */
+typeSelect.addEventListener("change", (e) => {
+    if (e.target.value === "other") {
+        customTypeLabel.style.display = "block";
+        customTypeInput.required = true;
+        customTypeInput.focus();
+    } else {
+        customTypeLabel.style.display = "none";
+        customTypeInput.required = false;
+        customTypeInput.value = "";
+    }
+});
+
+/**
+ * Show notification message
+ */
+function showNotification(message, type = "info") {
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#2ecc71' : '#3498db'};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10000;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        ">
+            ${message}
+        </div>
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification) {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+/**
+ * Handle form submission
+ */
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'جاري التسجيل...';
+
+    try {
+        const formData = new FormData(form);
+        const data = {
+            company: formData.get('company'),
+            type: formData.get('type'),
+            customType: formData.get('customType'),
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            prizes: formData.get('prizes')
+        };
+
+        const response = await fetch('{% url "companies:register" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(result.message, "success");
+            setTimeout(() => {
+                window.location.href = result.redirect_url;
+            }, 2000);
+        } else {
+            showNotification(result.message, "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+
+    } catch (error) {
+        showNotification("حدث خطأ في الاتصال", "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ company.name }} | دوّرها{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+
+<header class="hero">
+    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo">
+</header>
+
+<!-- Main Content -->
+<main class="stage">
+    {% if status == 'rejected' %}
+    <!-- Status Message -->
+    <section class="status-message-card fade-in">
+        <div class="status-icon">❌</div>
+        <h2>نعتذر، تم رفض طلبك</h2>
+        <p>نعتذر، لم يتم قبول طلبك حالياً. يمكنك التواصل معنا للمزيد من المعلومات.</p>
+        
+        <div class="company-info-box">
+            <h3>معلومات طلبك:</h3>
+            <p><strong>اسم الجهة:</strong> {{ company.name }}</p>
+            <p><strong>نوع الجهة:</strong> {{ company.final_type }}</p>
+            <p><strong>البريد الإلكتروني:</strong> {{ company.email }}</p>
+            <p><strong>الحالة:</strong> 
+                <span class="status-badge status-{{ status }}">❌ مرفوض</span>
+            </p>
+        </div>
+    </section>
+    {% elif not is_active %}
+    <!-- Inactive Status Message -->
+    <section class="status-message-card fade-in">
+        <div class="status-icon">⏸️</div>
+        <h2>الحساب غير مفعل</h2>
+        <p>حسابك غير مفعل حالياً. يرجى التواصل مع فريق دوّرها لتفعيل الحساب.</p>
+        
+        <div class="company-info-box">
+            <h3>معلومات طلبك:</h3>
+            <p><strong>اسم الجهة:</strong> {{ company.name }}</p>
+            <p><strong>نوع الجهة:</strong> {{ company.final_type }}</p>
+            <p><strong>البريد الإلكتروني:</strong> {{ company.email }}</p>
+            <p><strong>الحالة:</strong> 
+                <span class="status-badge status-{{ company.dynamic_status }}">
+                    {% if company.dynamic_status == 'active' %}🟢 نشط الآن
+                    {% elif company.dynamic_status == 'scheduled' %}📅 مجدول
+                    {% elif company.dynamic_status == 'inactive' %}🔴 غير نشط
+                    {% elif company.dynamic_status == 'pending' %}⏳ قيد المراجعة
+                    {% elif company.dynamic_status == 'approved' %}✅ موافق عليه
+                    {% elif company.dynamic_status == 'rejected' %}❌ مرفوض
+                    {% else %}❓ غير محدد
+                    {% endif %}
+                </span>
+            </p>
+            {% if company.schedules.exists %}
+                {% for schedule in company.schedules.all %}
+                    {% if schedule.is_active %}
+                        <p><strong>موعد الجدولة القادمة:</strong> 
+                            {% if schedule.saturday %}السبت{% endif %}
+                            {% if schedule.sunday %}الأحد{% endif %}
+                            {% if schedule.monday %}الاثنين{% endif %}
+                            {% if schedule.tuesday %}الثلاثاء{% endif %}
+                            {% if schedule.wednesday %}الأربعاء{% endif %}
+                            {% if schedule.thursday %}الخميس{% endif %}
+                            {% if schedule.friday %}الجمعة{% endif %}
+                            {{ schedule.get_time_display }}
+                        </p>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </section>
+    {% else %}
+    <!-- Game Section - Show when approved and active -->
+    <!-- Name and Phone Input Form -->
+    <section id="nameSection" class="name-form-card fade-in">
+        <h2>مرحباً بك! 👋</h2>
+        <p>أدخل اسمك ورقم جوالك لتبدأ اللعب</p>
+        
+        <form id="nameForm" class="form">
+            <label>
+                الاسم
+                <input id="visitorName" type="text" required placeholder="اكتب اسمك هنا" style="font-size:16px;">
+            </label>
+            <label>
+                رقم الجوال (اختياري)
+                <input id="visitorPhone" type="tel" placeholder="05xxxxxxxx" pattern="05[0-9]{8}" style="font-size:16px;">
+                <small class="field-hint">مثال: 0501234567 (اختياري)</small>
+            </label>
+            <button type="submit" class="btn primary" style="width:100%;">ابدأ اللعب 🎡</button>
+        </form>
+    </section>
+
+    <!-- Wheel Section -->
+    <div id="wheelSection" class="wheel-wrap" style="display:none; margin-top:30px;">
+        <div class="needle"></div>
+        <canvas id="wheelCanvas" width="560" height="560"></canvas>
+        <button id="spinBtn" class="btn primary">جرّب حظك ✨</button>
+        <div id="resultText" class="result"></div>
+    </div>
+    {% endif %}
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.status-message-card {
+    background: #fff;
+    padding: 50px 40px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(106, 63, 160, 0.15);
+    max-width: 500px;
+    margin: 50px auto;
+    text-align: center;
+    border: 2px solid rgba(106, 63, 160, 0.1);
+}
+
+.status-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+}
+
+.status-message-card h2 {
+    color: var(--purple);
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.status-message-card p {
+    font-size: 18px;
+    line-height: 1.8;
+    margin-bottom: 30px;
+    color: #5A4B70;
+    font-weight: 600;
+}
+
+.company-info-box {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(106, 63, 160, 0.1);
+    border-radius: 12px;
+    text-align: right;
+}
+
+.company-info-box h3 {
+    color: var(--purple);
+    margin: 0 0 15px;
+    font-size: 20px;
+}
+
+.company-info-box p {
+    margin: 8px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-approved {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-rejected {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-scheduled {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.field-hint {
+    display: block;
+    color: #6c757d;
+    font-size: 12px;
+    margin-top: 4px;
+    font-style: italic;
+}
+</style>
+<script>
+{% if is_active %}
+// Game data
+const companySlug = "{{ company.slug }}";
+const prizes = {{ prizes|safe }};
+const colors = {{ colors|safe }};
+let currentVisitorName = "";
+let currentVisitorPhone = "";
+
+// DOM Elements
+const nameSection = document.getElementById("nameSection");
+const wheelSection = document.getElementById("wheelSection");
+const nameForm = document.getElementById("nameForm");
+const visitorNameInput = document.getElementById("visitorName");
+const visitorPhoneInput = document.getElementById("visitorPhone");
+const canvas = document.getElementById("wheelCanvas");
+const ctx = canvas?.getContext("2d");
+const spinBtn = document.getElementById("spinBtn");
+const resultText = document.getElementById("resultText");
+
+let spinning = false;
+
+/**
+ * Handle Name Form Submission
+ */
+nameForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    currentVisitorName = visitorNameInput.value.trim();
+    currentVisitorPhone = visitorPhoneInput.value.trim();
+    
+    // Validate phone number (optional)
+    const phonePattern = /^05[0-9]{8}$/;
+    if (currentVisitorPhone && !phonePattern.test(currentVisitorPhone)) {
+        alert('يرجى إدخال رقم جوال صحيح (مثال: 0501234567) أو تركه فارغاً');
+        visitorPhoneInput.focus();
+        return;
+    }
+    
+    if (currentVisitorName) {
+        wheelSection.style.display = "flex";
+        wheelSection.classList.add("fade-in");
+        
+        visitorNameInput.disabled = true;
+        visitorPhoneInput.disabled = true;
+        const submitBtn = nameForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = "✅ تم التسجيل";
+        submitBtn.style.background = "#2ecc71";
+        
+        if (prizes.length > 0) {
+            drawWheel();
+        }
+        
+        setTimeout(() => {
+            wheelSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
+});
+
+/**
+ * Draw Wheel
+ */
+function drawWheel() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const numSeg = prizes.length;
+    const arc = (2 * Math.PI) / numSeg;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = canvas.width / 2 - 8;
+
+    for (let i = 0; i < numSeg; i++) {
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, i * arc, (i + 1) * arc);
+        ctx.lineTo(centerX, centerY);
+        ctx.fill();
+        
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(i * arc + arc / 2);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 20px Cairo";
+        ctx.textAlign = "right";
+        ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+        ctx.fillText(prizes[i], radius - 20, 10);
+        ctx.restore();
+    }
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+    ctx.fillStyle = "#2F1D52";
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+}
+
+/**
+ * Spin Wheel
+ */
+async function spinWheel() {
+    if (spinning) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    spinBtn.textContent = 'جاري الدوران... ⏳';
+
+    try {
+        // Get the prize from server FIRST
+        const response = await fetch(`/game/spin/${companySlug}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                visitor_name: currentVisitorName,
+                visitor_phone: currentVisitorPhone
+            })
+        });
+
+        const result = await response.json();
+        
+        if (!result.success) {
+            alert(result.message || 'حدث خطأ أثناء الدوران');
+            spinning = false;
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'جرّب حظك ✨';
+            return;
+        }
+
+        const wonPrize = (result.prize || '').trim();
+        // Normalize prizes to avoid whitespace/diacritics mismatch
+        const normalizedPrizes = prizes.map(p => (p || '').toString().trim());
+        let prizeIndex = normalizedPrizes.indexOf(wonPrize);
+        if (prizeIndex === -1) {
+            // Fallback: try case-insensitive match
+            prizeIndex = normalizedPrizes.findIndex(p => p.toLowerCase() === wonPrize.toLowerCase());
+        }
+        if (prizeIndex === -1) {
+            // If still not found, default to first segment to avoid crash
+            prizeIndex = 0;
+        }
+        
+        // Calculate rotation to land on the correct prize
+        const spins = Math.floor(Math.random() * 3) + 5; // 5-7 full spins
+        const segmentAngle = (2 * Math.PI) / prizes.length;
+        
+        // Calculate the angle to center on the prize
+        // Pointer is at the top (12 o'clock) which is -90deg (−π/2) from the canvas +X axis
+        const pointerAngle = -Math.PI / 2;
+        const segmentMidAngle = prizeIndex * segmentAngle + (segmentAngle / 2);
+        // Rotate the wheel so that segmentMidAngle aligns with pointerAngle
+        const targetAngle = (pointerAngle - segmentMidAngle);
+        const finalAngle = (2 * Math.PI * spins) + targetAngle;
+
+        let start = null;
+        const duration = 4000; // 4 seconds
+
+        function animate(timestamp) {
+            if (!start) start = timestamp;
+            const progress = Math.min((timestamp - start) / duration, 1);
+            const angle = easeOutCubic(progress) * finalAngle;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(angle);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+            drawWheel();
+            ctx.restore();
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                spinning = false;
+                spinBtn.disabled = false;
+                spinBtn.textContent = 'جرّب حظك ✨';
+                
+                resultText.textContent = `🎉 ربحت: ${wonPrize}`;
+                resultText.style.animation = "pulse 1s ease-in-out 3";
+                
+                canvas.style.transform = "scale(1.05)";
+                setTimeout(() => {
+                    canvas.style.transform = "scale(1)";
+                }, 500);
+
+                setTimeout(() => {
+                    showPrizeModal(wonPrize);
+                }, 1000);
+            }
+        }
+        requestAnimationFrame(animate);
+
+    } catch (err) {
+        console.error("خطأ غير متوقع:", err);
+        alert('حدث خطأ أثناء الدوران. يرجى المحاولة مرة أخرى.');
+        spinning = false;
+        spinBtn.disabled = false;
+        spinBtn.textContent = 'جرّب حظك ✨';
+    }
+}
+
+/**
+ * Easing function
+ */
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+
+/**
+ * Show Prize Modal
+ */
+function showPrizeModal(prize) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            font-family: 'Cairo', sans-serif;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            animation: fadeIn 0.4s ease;
+        ">
+            <h2 style="color:#2ecc71;font-size:32px;margin:0 0 15px;">🎉 مبروك ${currentVisitorName}!</h2>
+            <p style="font-size:24px;margin:15px 0 30px;color:#333;font-weight:bold;">${prize}</p>
+            <button id="continueBtn" style="
+                background:#6A3FA0;
+                color:white;
+                border:none;
+                padding:14px 30px;
+                border-radius:12px;
+                cursor:pointer;
+                font-size:18px;
+                font-weight:bold;
+                box-shadow: 0 4px 12px rgba(106,63,160,0.4);
+                transition: all 0.3s ease;
+            ">🎁 استلام الجائزة</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle button click
+    modal.querySelector('#continueBtn').addEventListener('click', () => {
+        // Remove modal
+        modal.remove();
+        
+        // Hide wheel section
+        wheelSection.style.display = 'none';
+        
+        // Reset form
+        nameForm.reset();
+        visitorNameInput.disabled = false;
+        visitorPhoneInput.disabled = false;
+        const submitBtn = nameForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.textContent = "ابدأ اللعب 🎡";
+        submitBtn.style.background = "";
+        
+        // Clear result text
+        resultText.textContent = '';
+        
+        // Show name section and scroll to it
+        nameSection.style.display = 'block';
+        setTimeout(() => {
+            nameSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    });
+}
+
+// Event Listeners
+spinBtn.addEventListener("click", spinWheel);
+{% endif %}
+</script>
+{% endblock %}

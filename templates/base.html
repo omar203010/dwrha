@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}دوّرها | منصة الجوائز التفاعلية{% endblock %}</title>
+    <meta name="description" content="{% block description %}منصة دوّرها للجوائز التفاعلية - احصل على عجلة حظ مخصصة لشركتك مع جوائزك الخاصة{% endblock %}">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{% load static %}{% static 'css/styles.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="footer-content">
+                <!-- تواصل معنا (الأبرز) -->
+                <div class="footer-section contact-highlight">
+                    <h3>تواصل معنا</h3>
+                    <div class="contact-info">
+                        <p><a href="mailto:info@dawwerha.com" style="color:inherit;text-decoration:none;"><i class="fas fa-envelope"></i> info@dawwerha.com</a></p>
+                        <p><a href="https://wa.me/966573663977" style="color:inherit;text-decoration:none;"><i class="fas fa-phone"></i> +966573663977</a></p>
+                        <p><i class="fas fa-map-marker-alt"></i> الرياض، المملكة العربية السعودية</p>
+                    </div>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/dawerha.ksa?igsh=dWdzZnc1Y29pb3g5&utm_source=qr" target="_blank" aria-label="انستجرام" title="انستجرام">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://www.tiktok.com/@dawerha2?_r=1&_t=ZS-915bTqj11vj" target="_blank" aria-label="تيك توك" title="تيك توك">
+                            <i class="fab fa-tiktok"></i>
+                        </a>
+                        <a href="https://snapchat.com/t/4xEvuUOy" target="_blank" aria-label="سناب شات" title="سناب شات">
+                            <i class="fab fa-snapchat"></i>
+                        </a>
+                        <a href="https://wa.me/966573663977" target="_blank" aria-label="واتساب" title="واتساب">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- عمود الأقسام الأخرى -->
+                <div class="footer-stack">
+                
+                <!-- من نحن -->
+                <div class="footer-section">
+                    <h3>من نحن</h3>
+                    <p>تعرف على قصة دورھا ورؤیتنا في دمج التقنیة والترفیه والتسویق</p>
+                </div>
+
+                <!-- انضم كشريك -->
+                <div class="footer-section">
+                    <h3>انضم كشريك</h3>
+                    <p>شاركنا النجاح سجل منشأتك لتصبح جزء من شبكة شركاء دّورھا نضع نموذج للشركاء</p>
+                </div>
+
+                <!-- الأسعار -->
+                <div class="footer-section">
+                    <h3>الاسعار</h3>
+                    <p>نقّدر أن كل فعالیة مختلفة، لذلك نقدم عروض أسعار مصممة حسب نوع المنشأة وعدد الأیام ونوع الجوائز. ساعة 24 أرسل تفاصیلك وسنوافیك بعرض السعر المناسب خلال تواصل معنا من خلال الرقم الخاص بنا</p>
+                </div>
+
+                <!-- سياسة العروض والمسابقات -->
+                <div class="footer-section">
+                    <h3>سیاسة العروض والمسابقات</h3>
+                    <p>جمیع العروض والمسابقات المقّدمة من خلال منصة دّورھا تخضع لشروط الجھة المشاركة المنظمة للفعالیة. یحق للمنصة إلغاء أو تعدیل أي عرض في حال حدوث خطأ تقني أو مخالفة للشروط. الجوائز رمزیة أو ترویجیة ولا یمكن استبدالھا نقًدا ما لم یُذكر خلاف ذلك في تفاصیل الفعالیة. المشاركة في أي فعالیة تُعد موافقة ضمنیة على الشروط والأحكام الخاصة بھا.</p>
+                </div>
+
+                <!-- سياسة حماية البيانات -->
+                <div class="footer-section">
+                    <h3>سیاسة حمایة البیانات</h3>
+                    <p>تلتزم منصة دّورھا بحمایة خصوصیة مستخدمیھا وشركائھا. لا یتم جمع أي بیانات شخصیة إلا لغرض تنفیذ الخدمات وتطویر التجربة التفاعلیة. قد تُستخدم البیانات الم ّجمعة (مثل عدد الزوار أو نتائج العجلة) في إعداد تقاریر تحلیلیة دون الإفصاح عن ھویة الأفراد. لا تتم مشاركة أي معلومات مع أطراف ثالثة إلا بعد موافقة مسبقة من صاحب البیانات أو حسب ما یقتضیھ النظام في المملكة العربیة السعودیة.</p>
+                </div>
+                
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="footer-bottom">
+                <p>دّورھا. جمیع الحقوق محفوظة 2025 ©</p>
+                <p>صنع بإبداع في السعودیة</p>
+            </div>
+        </footer>
+        
+        <!-- Footer Modal -->
+        <div id="footerModal" class="footer-modal-overlay" style="display:none;">
+            <div class="footer-modal" role="dialog" aria-modal="true" aria-labelledby="footerModalTitle">
+                <button type="button" class="footer-modal-close" aria-label="إغلاق">×</button>
+                <h3 id="footerModalTitle"></h3>
+                <div id="footerModalContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+    (function(){
+        const overlay = document.getElementById('footerModal');
+        const titleEl = document.getElementById('footerModalTitle');
+        const contentEl = document.getElementById('footerModalContent');
+        const closeBtn = overlay?.querySelector('.footer-modal-close');
+        let hoverTimer = null;
+
+        function openModal(title, html) {
+            if (!overlay) return;
+            titleEl.textContent = (title || '').trim();
+            contentEl.innerHTML = html || '';
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            closeBtn?.focus();
+        }
+
+        function closeModal() {
+            if (!overlay) return;
+            overlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // Bind click (only) on non-contact sections
+        const clickableHeadings = document.querySelectorAll('.footer-section:not(.contact-highlight) > h3');
+        clickableHeadings.forEach(h3 => {
+            const section = h3.parentElement;
+            h3.setAttribute('tabindex', '0');
+            h3.setAttribute('role', 'button');
+            h3.addEventListener('click', () => {
+                const p = section?.querySelector('p');
+                openModal(h3.textContent, p ? p.innerHTML : '');
+            });
+            h3.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const p = section?.querySelector('p');
+                    openModal(h3.textContent, p ? p.innerHTML : '');
+                }
+            });
+        });
+
+        // Close behaviors
+        closeBtn?.addEventListener('click', closeModal);
+        overlay?.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && overlay?.style.display === 'flex') closeModal();
+        });
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

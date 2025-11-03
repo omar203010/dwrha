@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}شكرًا لتسجيلك | دوّرها{% endblock %}
+
+{% block content %}
+<div class="thankyou-page">
+    <div class="thankyou-container">
+        <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="thankyou-logo">
+        <h1>🎉 شكرًا! تم استلام طلبك بنجاح</h1>
+        <p>سيتواصل معك فريق <strong>دوّرها</strong> قريبًا لتفعيل التجربة في منشأتك.</p>
+        
+        {% if company %}
+        <div class="game-link-section">
+            <h3>🎮 رابط اللعبة الخاص بك</h3>
+            <div class="game-link-container">
+                <code class="game-url">{{ request.scheme }}://{{ request.get_host }}/game/play/{{ company.slug }}/</code>
+                <button onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}/game/play/{{ company.slug }}/')" class="copy-btn">
+                    <i class="fas fa-copy"></i> نسخ الرابط
+                </button>
+            </div>
+            <p class="link-note">احفظ هذا الرابط لاستخدامه في منشأتك</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.thankyou-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.thankyou-container {
+    text-align: center;
+    background: #fff;
+    padding: 50px 40px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(106, 63, 160, 0.15);
+    max-width: 600px;
+    margin: 20px;
+    border: 2px solid rgba(106, 63, 160, 0.1);
+}
+
+.thankyou-logo {
+    width: 200px;
+    max-height: 120px;
+    height: auto;
+    margin-bottom: 30px;
+    background: transparent;
+    filter: none;
+}
+
+.thankyou-container h1 {
+    color: var(--purple);
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.thankyou-container p {
+    font-size: 18px;
+    line-height: 1.8;
+    margin-bottom: 30px;
+    color: #5A4B70;
+    font-weight: 600;
+}
+
+.game-link-section {
+    margin: 30px 0;
+    padding: 25px;
+    background: linear-gradient(135deg, rgba(106, 63, 160, 0.1), rgba(139, 89, 196, 0.1));
+    border-radius: 15px;
+    border: 2px solid rgba(106, 63, 160, 0.2);
+}
+
+.game-link-section h3 {
+    color: var(--purple);
+    margin: 0 0 20px;
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.game-link-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px solid rgba(106, 63, 160, 0.2);
+    margin-bottom: 15px;
+}
+
+.game-url {
+    flex: 1;
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 8px;
+    color: #6A3FA0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    word-break: break-all;
+    border: 1px solid #e9ecef;
+}
+
+.copy-btn {
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.copy-btn:hover {
+    background: #5a2d8a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(106, 63, 160, 0.3);
+}
+
+.copy-btn:active {
+    transform: translateY(0);
+}
+
+.link-note {
+    color: #6c757d;
+    font-size: 14px;
+    margin: 0;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-link-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .copy-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .thankyou-container {
+        padding: 30px 20px;
+        margin: 10px;
+    }
+    
+    .thankyou-container h1 {
+        font-size: 24px;
+    }
+    
+    .thankyou-container p {
+        font-size: 16px;
+    }
+}
+</style>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        const btn = event.target.closest('.copy-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+        btn.style.background = '#28a745';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'var(--purple)';
+        }, 2000);
+    }).catch(function(err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        // Show success message
+        const btn = event.target.closest('.copy-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+        btn.style.background = '#28a745';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'var(--purple)';
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ company.name }} | دوّرها{% endblock %}
+
+{% block content %}
+<div class="status-page">
+    <div class="status-container">
+        <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="status-logo">
+        
+        {% if status == 'pending' %}
+        <h1>⏳ طلبك قيد المراجعة</h1>
+        <p>شكراً لك على التسجيل! طلبك قيد المراجعة من فريق دوّرها وسيتم التواصل معك قريباً.</p>
+        {% elif status == 'rejected' %}
+        <h1>❌ نعتذر، تم رفض طلبك</h1>
+        <p>نعتذر، لم يتم قبول طلبك حالياً. يمكنك التواصل معنا للمزيد من المعلومات.</p>
+        {% elif not is_active %}
+        <h1>⏸️ الحساب غير مفعل</h1>
+        <p>حسابك غير مفعل حالياً. يرجى التواصل مع فريق دوّرها لتفعيل الحساب.</p>
+        {% endif %}
+        
+        <div class="company-info">
+            <h3>معلومات طلبك:</h3>
+            <p><strong>اسم الجهة:</strong> {{ company.name }}</p>
+            <p><strong>نوع الجهة:</strong> {{ company.final_type }}</p>
+            <p><strong>البريد الإلكتروني:</strong> {{ company.email }}</p>
+            <p><strong>الحالة:</strong> {{ company.get_status_display }}</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.status-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.status-container {
+    text-align: center;
+    background: #fff;
+    padding: 50px 40px;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(106, 63, 160, 0.15);
+    max-width: 500px;
+    margin: 20px;
+    border: 2px solid rgba(106, 63, 160, 0.1);
+}
+
+.status-logo {
+    width: 200px;
+    max-height: 120px;
+    height: auto;
+    margin-bottom: 30px;
+    background: transparent;
+    filter: none;
+}
+
+.status-container h1 {
+    color: var(--purple);
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.status-container p {
+    font-size: 18px;
+    line-height: 1.8;
+    margin-bottom: 30px;
+    color: #5A4B70;
+    font-weight: 600;
+}
+
+.company-info {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(106, 63, 160, 0.1);
+    border-radius: 12px;
+    text-align: right;
+}
+
+.company-info h3 {
+    color: var(--purple);
+    margin: 0 0 15px;
+}
+
+.company-info p {
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+.btn {
+    display: inline-block;
+    border: 0;
+    border-radius: 12px;
+    padding: 15px 30px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--purple);
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(106, 63, 160, 0.3);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(106, 63, 160, 0.4);
+}
+
+/* زر رجوع ثابت لضمان ظهوره على الشاشات الصغيرة (مثل الآيباد/الجوال) */
+.floating-back {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 9999;
+}
+
+@media (min-width: 768px) {
+    .floating-back {
+        position: static;
+        transform: none;
+        margin-top: 10px;
+    }
+}
+</style>
+{% endblock %}

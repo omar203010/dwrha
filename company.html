@@ -1,55 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>دوّرها | صفحة الشركة</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
-
-  <!-- مكتبة Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-  <!-- إعداد الاتصال -->
-  <script defer src="supabase.js"></script>
-  
-  <!-- منطق العجلة -->
-  <script defer src="wheel.js"></script>
-</head>
-<body>
-  <!-- سدو علوي -->
-  <img src="assets/sadu-strip.jpeg" alt="سدو علوي" class="sadu-img">
-
-  <!-- هيدر -->
-  <header class="hero">
-    <img id="companyLogo" alt="شعار الشركة" class="hero-logo">
-    <h1 id="companyName" class="hero-title"></h1>
-  </header>
-
-  <!-- الحاوية الرئيسية -->
-  <main class="stage">
-    <!-- نموذج إدخال الاسم -->
-    <section id="nameSection" class="name-form-card">
-      <h2>مرحباً بك! 👋</h2>
-      <p>أدخل اسمك لتبدأ اللعب</p>
-      <form id="nameForm" class="form">
-        <label>الاسم
-          <input id="visitorName" type="text" required placeholder="اكتب اسمك هنا" style="font-size:16px;" />
-        </label>
-        <button type="submit" class="btn primary" style="width:100%;">ابدأ اللعب 🎡</button>
-      </form>
-    </section>
-
-    <!-- مسرح العجلة -->
-    <div id="wheelSection" class="wheel-wrap" style="display:none; margin-top:30px;">
-      <div class="needle"></div>
-      <canvas id="wheelCanvas" width="560" height="560"></canvas>
-      <button id="spinBtn" class="btn primary">جرّب حظك ✨</button>
-      <div id="resultText" class="result"></div>
-    </div>
-  </main>
-
-
-  <footer class="footer">© 2025 Dawerha – جميع الحقوق محفوظة</footer>
-</body>
-</html>
