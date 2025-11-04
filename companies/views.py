@@ -3,6 +3,7 @@ Views for companies app
 """
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -11,7 +12,7 @@ from django.views.generic import TemplateView
 from django.urls import reverse
 import json
 import random
-from .models import Company
+from .models import Company, ActivationSchedule
 
 
 class HomeView(TemplateView):
@@ -152,5 +153,30 @@ def company_dashboard(request, company_id):
     }
     
     return render(request, 'companies/dashboard.html', context)
+
+
+@staff_member_required
+@require_http_methods(["GET"])
+def get_schedule_status(request, schedule_id):
+    """Get real-time schedule activation status"""
+    try:
+        schedule = get_object_or_404(ActivationSchedule, id=schedule_id)
+        company_status = schedule.get_company_activation_status()
+        
+        return JsonResponse({
+            'success': True,
+            'status': company_status['status'],
+            'display': company_status['display'],
+            'color': company_status['color'],
+            'is_active': company_status['is_active'],
+            'end_time': company_status.get('end_time'),
+            'schedule_active': schedule.is_active,
+            'should_activate_soon': schedule.should_activate_soon()
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 

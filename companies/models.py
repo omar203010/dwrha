@@ -313,7 +313,7 @@ class Company(models.Model):
                         continue  # Still within activation period
                 
                 # Activate company with scheduled hour
-                self.activate_now(hours=schedule.duration_hours, scheduled_hour=schedule.start_hour)
+                self.activate_now(hours=schedule.duration_hours, scheduled_hour=schedule.start_hour, scheduled_end_hour=schedule.end_hour)
                 schedule.last_activation = timezone.now()
                 schedule.save()
                 break  # Only activate from one schedule at a time
@@ -325,27 +325,55 @@ class Company(models.Model):
         self.approved_at = timezone.now()
         self.save()
     
-    def activate_now(self, hours=None, scheduled_hour=None):
+    def activate_now(self, hours=None, scheduled_hour=None, scheduled_end_hour=None):
         """
         Activate the company for specified hours
         Args:
             hours: Number of hours to activate
             scheduled_hour: If provided, set start time to the beginning of that hour
+            scheduled_end_hour: If provided, set end time to the end of that hour
         """
         if hours is None:
             hours = self.active_hours
         
         self.is_active = True
         
-        # If scheduled_hour is provided, set start time to the beginning of that hour
+        # If scheduled_hour is provided, set start/end times based on schedule
         if scheduled_hour is not None:
             now = timezone.now()
             saudi_time = now.astimezone(timezone.get_current_timezone())
-            # Set start time to the beginning of the scheduled hour (minute 0, second 0, microsecond 0)
+            
+            # Set start time to the beginning of the scheduled hour
             saudi_start = saudi_time.replace(hour=scheduled_hour, minute=0, second=0, microsecond=0)
-            # Use the scheduled hour start time as activation start
-            self.activation_start_time = saudi_start
-            self.activation_end_time = saudi_start + timezone.timedelta(hours=hours)
+            
+            # If the scheduled time is in the past, use current time instead
+            if saudi_start <= saudi_time:
+                # Use current time as start (immediate activation)
+                self.activation_start_time = now
+            else:
+                # Use the scheduled hour start time
+                self.activation_start_time = saudi_start
+            
+            # Set end time based on scheduled_end_hour if provided
+            if scheduled_end_hour is not None:
+                # Calculate end time at the end of the scheduled hour
+                if saudi_start <= saudi_time:
+                    # If we started now, calculate end based on current time
+                    saudi_end = saudi_time.replace(hour=scheduled_end_hour, minute=0, second=0, microsecond=0)
+                    # If end hour has passed today, schedule for tomorrow
+                    if saudi_end <= saudi_time:
+                        saudi_end = saudi_end + timezone.timedelta(days=1)
+                    self.activation_end_time = saudi_end
+                else:
+                    # Started at scheduled time, calculate end normally
+                    saudi_end = saudi_start.replace(hour=scheduled_end_hour, minute=0, second=0, microsecond=0)
+                    # Handle cross-midnight
+                    if scheduled_end_hour < scheduled_hour:
+                        saudi_end = saudi_end + timezone.timedelta(days=1)
+                    self.activation_end_time = saudi_end
+            else:
+                # Use duration if no end_hour specified
+                self.activation_end_time = self.activation_start_time + timezone.timedelta(hours=hours)
         else:
             # Normal activation - start from now
             self.activation_start_time = timezone.now()
@@ -489,16 +517,8 @@ class ActivationSchedule(models.Model):
             # Crosses midnight: start=22, end=2 → duration=4 hours (22,23,0,1,2)
             self.duration_hours = (24 - self.start_hour) + self.end_hour
         
-        # Check if this is a new schedule being created
-        is_new = self.pk is None
-        
+        # Save the schedule (no auto-activation - only via "activate_by_schedule" action)
         super().save(*args, **kwargs)
-        
-        # If this is a new schedule and should activate soon, activate immediately
-        if is_new and self.is_active and self.should_activate_soon():
-            self.company.activate_now(hours=self.duration_hours, scheduled_hour=self.start_hour)
-            self.last_activation = timezone.now()
-            self.save()  # Save again to update last_activation
     
     def clean(self):
         """Validate schedule"""
@@ -622,10 +642,54 @@ class ActivationSchedule(models.Model):
         # Check if current hour is within activation window
         if self.start_hour <= self.end_hour:
             # Normal case: start=9, end=17 (9 AM to 5 PM)
-            return self.start_hour <= current_hour < self.end_hour
+            # Include end_hour to allow activation during the entire end hour
+            return self.start_hour <= current_hour <= self.end_hour
         else:
             # Crosses midnight: start=22, end=2 (10 PM to 2 AM)
-            return current_hour >= self.start_hour or current_hour < self.end_hour
+            return current_hour >= self.start_hour or current_hour <= self.end_hour
+    
+    def can_activate_manually(self):
+        """
+        Check if schedule can be activated manually from admin action.
+        Returns: (can_activate, is_exact_hour, message)
+        - can_activate: True if should activate immediately
+        - is_exact_hour: True if current time is exactly at start_hour (minute 0)
+        - message: message to display if cannot activate
+        """
+        if not self.is_active:
+            return (False, False, "الجدولة غير مفعلة")
+        
+        now = timezone.now()
+        saudi_time = now.astimezone(timezone.get_current_timezone())
+        current_weekday = saudi_time.weekday()  # 0=Monday, 6=Sunday
+        current_hour = saudi_time.hour
+        current_minute = saudi_time.minute
+        
+        # Check if today is an active day
+        active_days = self.get_active_days_list()
+        if current_weekday not in active_days:
+            return (False, False, "اليوم ليس ضمن أيام التفعيل المحددة")
+        
+        # Check if exactly at start_hour (minute 0)
+        if current_hour == self.start_hour and current_minute == 0:
+            return (False, True, f"الوقت الحالي هو نفس وقت بداية الجدولة ({self.start_hour}:00)")
+        
+        # Check if within activation window (before start_hour by 1 minute or after start_hour)
+        if self.start_hour <= self.end_hour:
+            # Normal case: start=10, end=11
+            # If before start_hour by 1 minute, can activate
+            if current_hour < self.start_hour:
+                return (True, False, None)
+            # If at or after start_hour and within end_hour, can activate
+            if self.start_hour <= current_hour <= self.end_hour:
+                return (True, False, None)
+        else:
+            # Crosses midnight: start=22, end=2
+            if current_hour < self.start_hour and current_hour > self.end_hour:
+                return (False, False, "خارج نطاق وقت التفعيل")
+            return (True, False, None)
+        
+        return (False, False, "خارج نطاق وقت التفعيل")
     
     def activate_company(self):
         """Activate the company based on schedule"""
@@ -633,8 +697,46 @@ class ActivationSchedule(models.Model):
             return False
         
         # Activate company with scheduled hour
-        self.company.activate_now(hours=self.duration_hours, scheduled_hour=self.start_hour)
+        self.company.activate_now(hours=self.duration_hours, scheduled_hour=self.start_hour, scheduled_end_hour=self.end_hour)
         self.last_activation = timezone.now()
         self.save()
         
         return True
+    
+    def get_company_activation_status(self):
+        """Get real-time company activation status"""
+        # Refresh company from database
+        self.company.refresh_from_db()
+        
+        if not self.company.is_active:
+            return {
+                'status': 'inactive',
+                'display': 'غير نشط',
+                'color': '#dc3545',
+                'is_active': False
+            }
+        
+        now = timezone.now()
+        
+        # Check if currently active based on time window
+        if self.company.activation_end_time:
+            if self.company.activation_start_time and self.company.activation_start_time <= now <= self.company.activation_end_time:
+                # Calculate remaining time
+                remaining = self.company.activation_end_time - now
+                hours_left = int(remaining.total_seconds() / 3600)
+                minutes_left = int((remaining.total_seconds() % 3600) / 60)
+                
+                return {
+                    'status': 'active',
+                    'display': f'نشط الآن ({hours_left}س {minutes_left}د)',
+                    'color': '#28a745',
+                    'is_active': True,
+                    'end_time': self.company.activation_end_time.strftime('%Y-%m-%d %H:%M:%S')
+                }
+        
+        return {
+            'status': 'inactive',
+            'display': 'غير نشط',
+            'color': '#dc3545',
+            'is_active': False
+        }

@@ -47,22 +47,22 @@ class Command(BaseCommand):
             self.stdout.write(f'Duration: {schedule.duration_hours} hours')
             
             if schedule.should_activate_now():
-                self.stdout.write(self.style.SUCCESS('[OK] Should activate now!'))
+                self.stdout.write(self.style.SUCCESS('✅ [تفعيل] الجدولة جاهزة للتفعيل الآن!'))
                 
                 if dry_run:
-                    self.stdout.write(self.style.WARNING('   [DRY RUN] Would activate company'))
+                    self.stdout.write(self.style.WARNING('   [تجربة] كان سيتم تفعيل الشركة'))
                     activated_count += 1
                 else:
                     success = schedule.activate_company()
                     if success:
-                        self.stdout.write(self.style.SUCCESS(f'   [OK] Activated company for {schedule.duration_hours} hours'))
-                        self.stdout.write(f'   Activation ends at: {schedule.company.activation_end_time.strftime("%Y-%m-%d %H:%M:%S")}')
+                        self.stdout.write(self.style.SUCCESS(f'   ✅ تم تفعيل الشركة لمدة {schedule.duration_hours} ساعة'))
+                        self.stdout.write(f'   ⏰ ينتهي التفعيل في: {schedule.company.activation_end_time.strftime("%Y-%m-%d %H:%M:%S")}')
                         activated_count += 1
                     else:
-                        self.stdout.write(self.style.WARNING('   [SKIP] Already activated recently, skipping'))
+                        self.stdout.write(self.style.WARNING('   ⏭️ تم تخطي الشركة (مفعلة بالفعل في هذه الساعة)'))
                         skipped_count += 1
             else:
-                self.stdout.write(self.style.WARNING('[SKIP] Not in activation window, skipping'))
+                self.stdout.write(self.style.WARNING('⏭️ تم تخطي الشركة (خارج نطاق الجدولة - ليس الآن وقت التفعيل)'))
                 skipped_count += 1
         
         self.stdout.write(f'\n{"=" * 70}')

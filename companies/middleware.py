@@ -39,7 +39,7 @@ class ScheduleActivationMiddleware:
             for schedule in schedules:
                 if schedule.should_activate_now():
                     # Activate company with scheduled hour to ensure activation starts at exact hour
-                    schedule.company.activate_now(hours=schedule.duration_hours, scheduled_hour=schedule.start_hour)
+                    schedule.company.activate_now(hours=schedule.duration_hours, scheduled_hour=schedule.start_hour, scheduled_end_hour=schedule.end_hour)
                     schedule.last_activation = timezone.now()
                     schedule.save()
                     

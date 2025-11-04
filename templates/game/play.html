@@ -362,7 +362,7 @@ async function spinWheel() {
         }
         
         // Calculate rotation to land on the correct prize
-        const spins = Math.floor(Math.random() * 3) + 5; // 5-7 full spins
+        const spins = Math.floor(Math.random() * 4) + 8; // 8-11 full spins for more excitement
         const segmentAngle = (2 * Math.PI) / prizes.length;
         
         // Calculate the angle to center on the prize
@@ -374,12 +374,12 @@ async function spinWheel() {
         const finalAngle = (2 * Math.PI * spins) + targetAngle;
 
         let start = null;
-        const duration = 4000; // 4 seconds
+        const duration = 6000; // 6 seconds for dramatic effect
 
         function animate(timestamp) {
             if (!start) start = timestamp;
             const progress = Math.min((timestamp - start) / duration, 1);
-            const angle = easeOutCubic(progress) * finalAngle;
+            const angle = easeOutElastic(progress) * finalAngle;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save();
@@ -421,10 +421,18 @@ async function spinWheel() {
 }
 
 /**
- * Easing function
+ * Easing function - Elastic bounce effect for dramatic wheel spin
  */
-function easeOutCubic(t) {
-    return 1 - Math.pow(1 - t, 3);
+function easeOutElastic(t) {
+    const c4 = (2 * Math.PI) / 3;
+    
+    if (t === 0) {
+        return 0;
+    } else if (t === 1) {
+        return 1;
+    } else {
+        return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+    }
 }
 
 /**

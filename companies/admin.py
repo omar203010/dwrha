@@ -182,6 +182,9 @@ class ActivationScheduleInline(admin.TabularInline):
 class CompanyAdmin(admin.ModelAdmin):
     inlines = [ActivationScheduleInline]
     
+    class Media:
+        js = ('admin/js/company_status_updater.js',)
+    
     list_display = [
         'name', 
         'slug',
@@ -350,7 +353,15 @@ class CompanyAdmin(admin.ModelAdmin):
     dynamic_status_display.short_description = 'الحالة الفعلية'
     
     def calculated_active_hours_display(self, obj):
-        """Display calculated active hours"""
+        """Display calculated active hours - show schedule hours if company has schedules"""
+        # If company has active schedules, show schedule duration
+        active_schedules = obj.schedules.filter(is_active=True)
+        if active_schedules.exists():
+            # Get first active schedule's duration
+            schedule_hours = active_schedules.first().duration_hours
+            return format_html('<span style="color: #17a2b8; font-weight: bold;">📅 {} ساعة (من الجدولة)</span>', schedule_hours)
+        
+        # Otherwise, show calculated hours
         hours = obj.calculated_active_hours
         
         if hours == 0:
@@ -442,9 +453,10 @@ class CompanyAdmin(admin.ModelAdmin):
     def activate_by_schedule(self, request, queryset):
         """تفعيل الشركات حسب جداولها الحالية"""
         activated_count = 0
-        skipped_count = 0
+        exact_hour_count = 0
         no_schedule_count = 0
         details = []
+        exact_hour_details = []
         
         for company in queryset:
             # Get active schedules
@@ -457,9 +469,17 @@ class CompanyAdmin(admin.ModelAdmin):
             # Try to activate from any matching schedule
             activated = False
             for schedule in active_schedules:
-                if schedule.should_activate_now():
-                    # Activate company directly (no check for recent activation)
-                    company.activate_now(hours=schedule.duration_hours)
+                can_activate, is_exact_hour, message = schedule.can_activate_manually()
+                
+                if is_exact_hour:
+                    # Exactly at start_hour - show message only
+                    exact_hour_count += 1
+                    exact_hour_details.append(f"⏰ {company.name}: {message}")
+                    activated = True
+                    break
+                elif can_activate:
+                    # Can activate immediately (before start_hour by 1 minute or after)
+                    company.activate_now(hours=schedule.duration_hours, scheduled_hour=schedule.start_hour, scheduled_end_hour=schedule.end_hour)
                     schedule.last_activation = timezone.now()
                     schedule.save()
                     
@@ -468,31 +488,35 @@ class CompanyAdmin(admin.ModelAdmin):
                     details.append(f"✅ {company.name}: تم التفعيل لـ {schedule.duration_hours} ساعة (حتى {end_time})")
                     activated = True
                     break
-            
-            if not activated:
-                skipped_count += 1
-                details.append(f"⏭️ {company.name}: خارج نطاق الجدولة (ليس ضمن أيام/أوقات التفعيل)")
         
-        # Build message
+        # Build message - only show activated and exact hour messages
         message_parts = []
         
         if activated_count > 0:
             message_parts.append(f'✅ تم تفعيل {activated_count} شركة حسب جداولها')
         
-        if skipped_count > 0:
-            message_parts.append(f'⏭️ تم تخطي {skipped_count} شركة (مفعلة أو خارج النطاق)')
+        if exact_hour_count > 0:
+            message_parts.append(f'⏰ {exact_hour_count} شركة: الوقت الحالي هو نفس وقت بداية الجدولة')
+            if exact_hour_details:
+                message_parts.append('\nالتفاصيل:')
+                message_parts.extend(exact_hour_details[:10])
+                if len(exact_hour_details) > 10:
+                    message_parts.append(f'... و {len(exact_hour_details) - 10} شركة أخرى')
         
         if no_schedule_count > 0:
             message_parts.append(f'⚠️ {no_schedule_count} شركة بدون جداول نشطة')
         
-        message = '\n'.join(message_parts)
-        
+        # Only show details for activated companies
         if details:
-            message += '\n\nالتفاصيل:\n' + '\n'.join(details[:10])
-            if len(details) > 10:
-                message += f'\n... و {len(details) - 10} شركة أخرى'
+            if activated_count > 0:
+                message_parts.append('\nشركات تم تفعيلها:')
+                message_parts.extend(details[:10])
+                if len(details) > 10:
+                    message_parts.append(f'... و {len(details) - 10} شركة أخرى')
         
-        level = 'success' if activated_count > 0 else 'warning'
+        message = '\n'.join(message_parts) if message_parts else 'لا توجد شركات للتحديث'
+        
+        level = 'success' if activated_count > 0 else ('info' if exact_hour_count > 0 else 'warning')
         self.message_user(request, message, level=level)
     
     activate_by_schedule.short_description = '📅 تفعيل حسب الجدولة (يتحقق من الأيام والأوقات)'
@@ -521,6 +545,9 @@ class ActivationScheduleAdmin(admin.ModelAdmin):
     ]
     search_fields = ['company__name', 'company__email']
     readonly_fields = ['last_activation', 'created_at', 'updated_at', 'schedule_status_display', 'duration_display']
+    
+    class Media:
+        js = ('admin/js/schedule_status_updater.js', 'admin/js/schedule_delete_handler.js',)
     
     fieldsets = (
         ('معلومات الشركة', {
@@ -590,21 +617,41 @@ class ActivationScheduleAdmin(admin.ModelAdmin):
     get_time_range.short_description = 'أوقات التفعيل'
     
     def status_indicator(self, obj):
-        """Show if schedule should activate now"""
+        """Show real-time company activation status"""
+        # Get company activation status
+        company_status = obj.get_company_activation_status()
+        
+        # Add data attribute for AJAX updates
+        status_id = f"schedule-status-{obj.id}"
+        
         if not obj.is_active:
             return format_html(
-                '<span style="color: #dc3545;">⏸️ متوقف</span>'
+                '<span id="{}" style="color: #dc3545;">⏸️ الجدولة متوقفة</span>',
+                status_id
             )
         
-        if obj.should_activate_now():
+        # Show company activation status
+        if company_status['is_active']:
             return format_html(
-                '<span style="color: #28a745;">✅ نشط الآن</span>'
+                '<span id="{}" style="color: {}; font-weight: bold;">✅ {}</span>',
+                status_id,
+                company_status['color'],
+                company_status['display']
             )
         else:
-            return format_html(
-                '<span style="color: #ffc107;">⏳ في انتظار الموعد</span>'
-            )
-    status_indicator.short_description = 'الحالة'
+            # Check if should activate soon
+            if obj.should_activate_soon():
+                return format_html(
+                    '<span id="{}" style="color: #ffc107;">⏳ جاهز للتفعيل (ضمن النطاق)</span>',
+                    status_id
+                )
+            else:
+                return format_html(
+                    '<span id="{}" style="color: #6c757d;">⏳ {} - خارج نطاق الجدولة</span>',
+                    status_id,
+                    company_status['display']
+                )
+    status_indicator.short_description = 'حالة الشركة'
     
     def schedule_status_display(self, obj):
         """Detailed schedule status display"""

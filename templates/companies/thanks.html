@@ -10,18 +10,7 @@
         <h1>🎉 شكرًا! تم استلام طلبك بنجاح</h1>
         <p>سيتواصل معك فريق <strong>دوّرها</strong> قريبًا لتفعيل التجربة في منشأتك.</p>
         
-        {% if company %}
-        <div class="game-link-section">
-            <h3>🎮 رابط اللعبة الخاص بك</h3>
-            <div class="game-link-container">
-                <code class="game-url">{{ request.scheme }}://{{ request.get_host }}/game/play/{{ company.slug }}/</code>
-                <button onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}/game/play/{{ company.slug }}/')" class="copy-btn">
-                    <i class="fas fa-copy"></i> نسخ الرابط
-                </button>
-            </div>
-            <p class="link-note">احفظ هذا الرابط لاستخدامه في منشأتك</p>
-        </div>
-        {% endif %}
+
     </div>
 </div>
 
