@@ -8,6 +8,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils import timezone
+import json
 from .models import Company, ActivationSchedule
 from .utils import format_riyadh_datetime, format_arabic_datetime
 
@@ -183,7 +184,71 @@ class CompanyAdmin(admin.ModelAdmin):
     inlines = [ActivationScheduleInline]
     
     class Media:
-        js = ('admin/js/company_status_updater.js',)
+        js = ('admin/js/company_status_updater.js', 'admin/js/prize_percentages.js',)
+        css = {
+            'all': ('admin/css/prize_percentages.css',)
+        }
+    
+    def save_model(self, request, obj, form, change):
+        """Override save to handle prize percentages"""
+        # Save the model first
+        super().save_model(request, obj, form, change)
+        
+        # Get prizes
+        prizes = obj.get_prizes_list()
+        if not prizes:
+            return
+        
+        # Collect percentages from form data (POST request)
+        prize_percentages = []
+        for i in range(len(prizes)):
+            field_name = f'prize_percentage_{i}'
+            if field_name in request.POST:
+                try:
+                    percentage = int(request.POST[field_name])
+                    if percentage > 0:  # Only accept positive values
+                        prize_percentages.append(percentage)
+                except (ValueError, TypeError):
+                    pass
+        
+        # If percentages were submitted and match prizes count, normalize and save them
+        if prize_percentages and len(prize_percentages) == len(prizes):
+            # Normalize percentages to sum to 100
+            total = sum(prize_percentages)
+            if total > 0:
+                # Normalize: (each_percentage / total) * 100
+                normalized = [(float(p) / total) * 100.0 for p in prize_percentages]
+                prize_percentages = [round(p) for p in normalized]
+                
+                # Adjust to ensure sum is exactly 100 (handle rounding errors)
+                current_sum = sum(prize_percentages)
+                if current_sum != 100:
+                    difference = 100 - current_sum
+                    max_idx = prize_percentages.index(max(prize_percentages))
+                    prize_percentages[max_idx] += difference
+                
+                # Ensure no percentage is less than 1
+                for i in range(len(prize_percentages)):
+                    if prize_percentages[i] < 1:
+                        prize_percentages[i] = 1
+                
+                # Re-adjust if needed
+                current_sum = sum(prize_percentages)
+                if current_sum != 100:
+                    difference = 100 - current_sum
+                    max_idx = prize_percentages.index(max(prize_percentages))
+                    prize_percentages[max_idx] += difference
+            
+            # Store in notes field
+            prizes_with_percentages = [
+                {'name': prize, 'percentage': percentage}
+                for prize, percentage in zip(prizes, prize_percentages)
+            ]
+            obj.notes = json.dumps({
+                'prize_percentages': prize_percentages,
+                'prizes_with_percentages': prizes_with_percentages
+            }, ensure_ascii=False)
+            obj.save(update_fields=['notes'])
     
     list_display = [
         'name', 
@@ -201,14 +266,14 @@ class CompanyAdmin(admin.ModelAdmin):
     ]
     list_filter = ['status', 'is_active', 'type', 'created_at', 'updated_at', 'active_hours', DynamicStatusFilter, ActivationStatusFilter, ScheduleStatusFilter, CurrentStatusFilter]
     search_fields = ['name', 'slug', 'email', 'phone', 'type', 'custom_type']
-    readonly_fields = ['slug', 'created_at', 'updated_at', 'approved_at', 'company_link', 'activation_status', 'schedules_summary']
+    readonly_fields = ['slug', 'created_at', 'updated_at', 'approved_at', 'company_link', 'activation_status', 'schedules_summary', 'prize_percentages_editor']
     
     fieldsets = (
         ('المعلومات الأساسية', {
             'fields': ('name', 'slug', 'type', 'custom_type', 'email', 'phone')
         }),
         ('إعدادات اللعبة', {
-            'fields': ('prizes', 'colors', 'logo_url')
+            'fields': ('prizes', 'colors', 'logo_url', 'prize_percentages_editor')
         }),
         ('الحالة والإدارة', {
             'fields': ('status', 'is_active', 'active_hours', 'activation_start_time', 'activation_end_time', 'activation_status', 'notes')
@@ -378,6 +443,104 @@ class CompanyAdmin(admin.ModelAdmin):
             else:
                 return format_html('<span style="color: #6c757d; font-weight: bold;">📅 {} يوم</span>', days)
     calculated_active_hours_display.short_description = 'عدد ساعات التفعيل'
+    
+    def prize_percentages_editor(self, obj):
+        """Display prize percentages in editable fields"""
+        if not obj.pk:
+            return format_html('<p style="color: #999; padding: 15px; background: #f8f9fa; border-radius: 5px;">⚠️ احفظ الشركة أولاً لعرض وتعديل النسب المئوية</p>')
+        
+        prizes = obj.get_prizes_list()
+        if not prizes:
+            return format_html('<p style="color: #999; padding: 15px; background: #f8f9fa; border-radius: 5px;">⚠️ لا توجد جوائز. أضف جوائز أولاً.</p>')
+        
+        # Get percentages from notes
+        prize_percentages = []
+        if obj.notes:
+            try:
+                notes_data = json.loads(obj.notes)
+                if 'prize_percentages' in notes_data:
+                    prize_percentages = notes_data['prize_percentages']
+            except (json.JSONDecodeError, KeyError):
+                pass
+        
+        # Ensure percentages match prizes count
+        if len(prize_percentages) != len(prizes):
+            equal_percentage = 100 // len(prizes)
+            prize_percentages = [equal_percentage] * len(prizes)
+            remainder = 100 - (equal_percentage * len(prizes))
+            if remainder > 0:
+                prize_percentages[-1] += remainder
+        
+        # Calculate total
+        total = sum(prize_percentages)
+        total_color = '#28a745' if total == 100 else '#ffc107' if total < 100 else '#dc3545'
+        
+        html = f'''
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; margin: 10px 0; border: 2px solid #6A3FA0;">
+            <h3 style="margin-top: 0; color: #6A3FA0; font-size: 18px;">🎯 النسب المئوية للجوائز</h3>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px; background: #e3f2fd; padding: 10px; border-radius: 5px;">
+                💡 <strong>كيف تعمل النسب:</strong> كلما زادت النسبة زاد احتمال الفوز بالجائزة. يمكنك إدخال أي قيمة (مثلاً 300%) وسيتم تطبيع النسب تلقائياً إلى 100%.
+            </p>
+            <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 5px; overflow: hidden;">
+                <thead>
+                    <tr style="background: #6A3FA0; color: white;">
+                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd; font-weight: bold;">الجائزة</th>
+                        <th style="padding: 12px; text-align: center; border: 1px solid #ddd; width: 200px; font-weight: bold;">النسبة المئوية</th>
+                    </tr>
+                </thead>
+                <tbody>
+        '''
+        
+        for i, (prize, percentage) in enumerate(zip(prizes, prize_percentages)):
+            field_name = f'prize_percentage_{i}'
+            html += f'''
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid #ddd; background: white;">
+                            <strong style="color: #333;">{prize}</strong>
+                        </td>
+                        <td style="padding: 12px; border: 1px solid #ddd; background: white; text-align: center;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <input type="number" 
+                                       id="{field_name}"
+                                       name="{field_name}" 
+                                       value="{percentage}" 
+                                       min="1" 
+                                       max="100" 
+                                       required
+                                       class="prize-percentage-input"
+                                       style="width: 100px; padding: 8px; text-align: center; border: 2px solid #6A3FA0; border-radius: 5px; font-weight: bold; font-size: 14px;"
+                                       onchange="updateTotalPercentage()"
+                                       oninput="updateTotalPercentage()">
+                                <span style="color: #6A3FA0; font-weight: bold; font-size: 16px;">%</span>
+                            </div>
+                        </td>
+                    </tr>
+            '''
+        
+        html += f'''
+                </tbody>
+                <tfoot>
+                    <tr style="background: #e3f2fd;">
+                        <td style="padding: 12px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 16px;">
+                            المجموع:
+                        </td>
+                        <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                            <span id="total-percentage" style="color: {total_color}; font-weight: bold; font-size: 18px;">
+                                {total}%
+                            </span>
+                            <small style="display: block; color: #666; margin-top: 5px; font-size: 12px;">
+                                (سيتم تطبيع النسب تلقائياً عند الحفظ)
+                            </small>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        '''
+        
+        return format_html(html)
+    prize_percentages_editor.short_description = '🎯 تعديل النسب المئوية للجوائز'
+    prize_percentages_editor.allow_tags = True
     
     def schedules_summary(self, obj):
         """Display summary of active schedules"""

@@ -214,10 +214,17 @@
 {% if is_active %}
 // Game data
 const companySlug = "{{ company.slug }}";
-const prizes = {{ prizes|safe }};
+// Normalize prizes (trim whitespace) to ensure matching with server
+const prizes = {{ prizes|safe }}.map(p => (p || '').toString().trim()).filter(p => p);
 const colors = {{ colors|safe }};
 let currentVisitorName = "";
 let currentVisitorPhone = "";
+
+// Log prizes for debugging (only in development)
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('Prizes loaded:', prizes);
+    console.log('Colors loaded:', colors);
+}
 
 // DOM Elements
 const nameSection = document.getElementById("nameSection");
@@ -296,13 +303,62 @@ function drawWheel() {
         ctx.translate(centerX, centerY);
         ctx.rotate(i * arc + arc / 2);
         ctx.fillStyle = "#fff";
-        ctx.font = "bold 20px Cairo";
         ctx.textAlign = "right";
         ctx.shadowColor = "rgba(0,0,0,0.5)";
         ctx.shadowBlur = 4;
         ctx.shadowOffsetX = 1;
         ctx.shadowOffsetY = 1;
-        ctx.fillText(prizes[i], radius - 20, 10);
+        
+        // Handle long text - wrap and adjust font size
+        const maxWidth = radius - 50;
+        const prizeText = prizes[i];
+        let fontSize = 20;
+        ctx.font = `bold ${fontSize}px Cairo`;
+        
+        // Measure text width
+        let textWidth = ctx.measureText(prizeText).width;
+        
+        // If text is too long, reduce font size
+        if (textWidth > maxWidth) {
+            fontSize = Math.max(12, Math.floor((maxWidth / textWidth) * fontSize));
+            ctx.font = `bold ${fontSize}px Cairo`;
+            textWidth = ctx.measureText(prizeText).width;
+        }
+        
+        // If still too long, wrap text to multiple lines
+        if (textWidth > maxWidth) {
+            const words = prizeText.split(' ');
+            const lines = [];
+            let currentLine = '';
+            
+            for (let word of words) {
+                const testLine = currentLine ? currentLine + ' ' + word : word;
+                const testWidth = ctx.measureText(testLine).width;
+                
+                if (testWidth > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            
+            // Draw multiple lines
+            const lineHeight = fontSize + 4;
+            const totalHeight = lines.length * lineHeight;
+            const startY = -(totalHeight / 2) + (lineHeight / 2);
+            
+            lines.forEach((line, lineIndex) => {
+                ctx.fillText(line, radius - 20, startY + (lineIndex * lineHeight));
+            });
+        } else {
+            // Single line text
+            ctx.fillText(prizeText, radius - 20, 10);
+        }
+        
         ctx.restore();
     }
     
@@ -349,16 +405,43 @@ async function spinWheel() {
         }
 
         const wonPrize = (result.prize || '').trim();
-        // Normalize prizes to avoid whitespace/diacritics mismatch
+        
+        // Normalize prizes (should already be normalized, but double-check)
         const normalizedPrizes = prizes.map(p => (p || '').toString().trim());
+        
+        // Try exact match first
         let prizeIndex = normalizedPrizes.indexOf(wonPrize);
+        
         if (prizeIndex === -1) {
             // Fallback: try case-insensitive match
             prizeIndex = normalizedPrizes.findIndex(p => p.toLowerCase() === wonPrize.toLowerCase());
         }
+        
         if (prizeIndex === -1) {
-            // If still not found, default to first segment to avoid crash
+            // Fallback: try partial match (contains)
+            prizeIndex = normalizedPrizes.findIndex(p => 
+                p.includes(wonPrize) || wonPrize.includes(p)
+            );
+        }
+        
+        if (prizeIndex === -1) {
+            // Last resort: log error and use first prize
+            console.error('Prize mismatch!', {
+                wonPrize: wonPrize,
+                availablePrizes: normalizedPrizes,
+                serverPrize: result.prize
+            });
+            alert(`تحذير: لم يتم العثور على الجائزة "${wonPrize}" في قائمة الجوائز. سيتم استخدام الجائزة الأولى.`);
             prizeIndex = 0;
+        } else {
+            // Verify the match
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('Prize matched successfully:', {
+                    wonPrize: wonPrize,
+                    matchedPrize: normalizedPrizes[prizeIndex],
+                    index: prizeIndex
+                });
+            }
         }
         
         // Calculate rotation to land on the correct prize

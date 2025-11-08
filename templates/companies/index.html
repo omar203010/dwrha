@@ -23,25 +23,22 @@
         <div class="grid">
             <label>
                 نوع الجهة
-                <select name="type" id="typeSelect" required>
-                    <option value="restaurant">مطعم</option>
-                    <option value="resort">منتجع</option>
-                    <option value="hotel">فندق</option>
-                    <option value="coffee">كوفي</option>
-                    <option value="cafe">مقهى</option>
-                    <option value="event">فعالية</option>
-                    <option value="other">أخرى</option>
-                </select>
+                <div id="typeContainer" style="width: 100%;">
+                    <select name="type" id="typeSelect" required style="width: 100%;">
+                        <option value="restaurant">مطعم</option>
+                        <option value="resort">منتجع</option>
+                        <option value="hotel">فندق</option>
+                        <option value="coffee">كوفي</option>
+                        <option value="cafe">مقهى</option>
+                        <option value="event">فعالية</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
             </label>
 
             <label>
                 اسم الجهة
                 <input name="company" required>
-            </label>
-
-            <label id="customTypeLabel" class="full" style="display: none;">
-                اكتب نوع الجهة
-                <input name="customType" id="customTypeInput" placeholder="مثال: صالون، عيادة، متجر...">
             </label>
 
             <label>
@@ -55,8 +52,26 @@
             </label>
 
             <label class="full">
-                الجوائز (افصل بينها بفاصلة ,)
-                <textarea name="prizes" placeholder="خصم 10%, خصم 20%, قسيمة, هدية مجانية"></textarea>
+                الجوائز واحتمالات الفوز (النسبة المئوية)
+                <small style="display: block; color: #6c757d; margin-bottom: 10px; font-size: 13px;">
+                    💡 كلما زادت النسبة زاد احتمال الفوز بالجائزة (من 1% إلى 100%)
+                </small>
+                <div id="prizesContainer" style="margin-top: 10px;">
+                    <div class="prize-item" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
+                            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-align: center; font-size: 14px;">
+                                <span style="font-weight: bold; color: #6A3FA0;">%</span>
+                            </div>
+                            <button type="button" class="remove-prize-btn" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">حذف</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="addPrizeBtn" style="margin-top: 10px; padding: 8px 15px; background: #6A3FA0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">+ إضافة جائزة</button>
+                <div id="totalPercentage" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-weight: bold; color: #1565c0; text-align: center;">
+                    المجموع: <span id="totalPercentValue">50</span>% (سيتم تطبيع النسب تلقائياً)
+                </div>
             </label>
         </div>
 
@@ -70,23 +85,161 @@
 // Elements
 const form = document.getElementById("leadForm");
 const typeSelect = document.getElementById("typeSelect");
-const customTypeLabel = document.getElementById("customTypeLabel");
-const customTypeInput = document.getElementById("customTypeInput");
+const typeContainer = document.getElementById("typeContainer");
 
 /**
- * Handle type selection change
+ * Handle type selection change - convert select to input when "other" is selected
  */
 typeSelect.addEventListener("change", (e) => {
     if (e.target.value === "other") {
-        customTypeLabel.style.display = "block";
-        customTypeInput.required = true;
-        customTypeInput.focus();
-    } else {
-        customTypeLabel.style.display = "none";
-        customTypeInput.required = false;
-        customTypeInput.value = "";
+        // Store the select element
+        const selectElement = e.target;
+        const selectValue = selectElement.value;
+        
+        // Create input element
+        const inputElement = document.createElement("input");
+        inputElement.type = "text";
+        inputElement.name = "customType";
+        inputElement.id = "customTypeInput";
+        inputElement.required = true;
+        inputElement.placeholder = "اكتب نوع الجهة (مثال: صالون، عيادة، متجر...)";
+        
+        // Copy styling from select and match company name field exactly
+        const computedStyle = window.getComputedStyle(selectElement);
+        const companyInput = document.querySelector('input[name="company"]');
+        
+        // Set width to 100% to match grid layout
+        inputElement.style.width = '100%';
+        inputElement.style.height = computedStyle.height;
+        inputElement.style.padding = computedStyle.padding;
+        inputElement.style.border = computedStyle.border;
+        inputElement.style.borderRadius = computedStyle.borderRadius;
+        inputElement.style.fontSize = computedStyle.fontSize;
+        inputElement.style.fontFamily = computedStyle.fontFamily;
+        inputElement.style.boxSizing = 'border-box';
+        inputElement.style.display = 'block';
+        inputElement.className = selectElement.className;
+        
+        // Match company input styling exactly if available
+        if (companyInput) {
+            const companyStyle = window.getComputedStyle(companyInput);
+            inputElement.style.height = companyStyle.height;
+            inputElement.style.padding = companyStyle.padding;
+            inputElement.style.border = companyStyle.border;
+            inputElement.style.borderRadius = companyStyle.borderRadius;
+            inputElement.style.fontSize = companyStyle.fontSize;
+        }
+        
+        // Replace select with input
+        typeContainer.innerHTML = '';
+        typeContainer.appendChild(inputElement);
+        
+        // Focus on input
+        inputElement.focus();
+        
+        // Add hidden input to store type="other"
+        const hiddenInput = document.createElement("input");
+        hiddenInput.type = "hidden";
+        hiddenInput.name = "type";
+        hiddenInput.value = "other";
+        typeContainer.appendChild(hiddenInput);
+        
+        // Add back button or change listener to restore select
+        inputElement.addEventListener("blur", function() {
+            // Optionally restore select if input is empty
+            if (!this.value.trim()) {
+                restoreSelect();
+            }
+        });
+        
+        // Add escape key to restore select
+        inputElement.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") {
+                restoreSelect();
+            }
+        });
     }
 });
+
+/**
+ * Restore select element
+ */
+function restoreSelect() {
+    typeContainer.innerHTML = `
+        <select name="type" id="typeSelect" required style="width: 100%;">
+            <option value="restaurant">مطعم</option>
+            <option value="resort">منتجع</option>
+            <option value="hotel">فندق</option>
+            <option value="coffee">كوفي</option>
+            <option value="cafe">مقهى</option>
+            <option value="event">فعالية</option>
+            <option value="other">أخرى</option>
+        </select>
+    `;
+    
+    // Re-attach event listener
+    const newSelect = document.getElementById("typeSelect");
+    newSelect.addEventListener("change", function(e) {
+        if (e.target.value === "other") {
+            const selectElement = e.target;
+            const inputElement = document.createElement("input");
+            inputElement.type = "text";
+            inputElement.name = "customType";
+            inputElement.id = "customTypeInput";
+            inputElement.required = true;
+            inputElement.placeholder = "اكتب نوع الجهة (مثال: صالون، عيادة، متجر...)";
+            
+            // Copy styling from select and match company name field exactly
+            const computedStyle = window.getComputedStyle(selectElement);
+            const companyInput = document.querySelector('input[name="company"]');
+            
+            // Set width to 100% to match grid layout
+            inputElement.style.width = '100%';
+            inputElement.style.height = computedStyle.height;
+            inputElement.style.padding = computedStyle.padding;
+            inputElement.style.border = computedStyle.border;
+            inputElement.style.borderRadius = computedStyle.borderRadius;
+            inputElement.style.fontSize = computedStyle.fontSize;
+            inputElement.style.fontFamily = computedStyle.fontFamily;
+            inputElement.style.boxSizing = 'border-box';
+            inputElement.style.display = 'block';
+            inputElement.className = selectElement.className;
+            
+            // Match company input styling exactly if available
+            if (companyInput) {
+                const companyStyle = window.getComputedStyle(companyInput);
+                inputElement.style.height = companyStyle.height;
+                inputElement.style.padding = companyStyle.padding;
+                inputElement.style.border = companyStyle.border;
+                inputElement.style.borderRadius = companyStyle.borderRadius;
+                inputElement.style.fontSize = companyStyle.fontSize;
+            }
+            
+            typeContainer.innerHTML = '';
+            typeContainer.appendChild(inputElement);
+            
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "type";
+            hiddenInput.value = "other";
+            typeContainer.appendChild(hiddenInput);
+            
+            inputElement.focus();
+            
+            inputElement.addEventListener("blur", function() {
+                if (!this.value.trim()) {
+                    restoreSelect();
+                }
+            });
+            
+            inputElement.addEventListener("keydown", function(e) {
+                if (e.key === "Escape") {
+                    restoreSelect();
+                }
+            });
+        }
+    });
+}
 
 /**
  * Show notification message
@@ -143,10 +296,108 @@ function showNotification(message, type = "info") {
 }
 
 /**
+ * Handle prize management
+ */
+const prizesContainer = document.getElementById('prizesContainer');
+const addPrizeBtn = document.getElementById('addPrizeBtn');
+const totalPercentValue = document.getElementById('totalPercentValue');
+
+function updateTotalPercentage() {
+    const percentages = Array.from(document.querySelectorAll('.prize-percentage'))
+        .map(input => parseInt(input.value) || 0);
+    const total = percentages.reduce((sum, val) => sum + val, 0);
+    totalPercentValue.textContent = total;
+    
+    // Show info message - percentages will be normalized automatically
+    const totalDiv = document.getElementById('totalPercentage');
+    if (total > 0) {
+        totalDiv.style.background = '#e3f2fd';
+        totalDiv.style.color = '#1565c0';
+        totalDiv.innerHTML = `المجموع: <span id="totalPercentValue">${total}</span>% (سيتم تطبيع النسب تلقائياً)`;
+    } else {
+        totalDiv.style.background = '#fff3cd';
+        totalDiv.style.color = '#856404';
+        totalDiv.innerHTML = `المجموع: <span id="totalPercentValue">0</span>% (يجب إدخال نسب مئوية)`;
+    }
+}
+
+function addPrizeItem() {
+    const prizeItem = document.createElement('div');
+    prizeItem.className = 'prize-item';
+    prizeItem.style.cssText = 'margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; position: relative;';
+    
+    prizeItem.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
+            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-align: center; font-size: 14px;">
+                <span style="font-weight: bold; color: #6A3FA0;">%</span>
+            </div>
+            <button type="button" class="remove-prize-btn" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">حذف</button>
+        </div>
+    `;
+    
+    prizesContainer.appendChild(prizeItem);
+    
+    // Add event listeners
+    prizeItem.querySelector('.prize-percentage').addEventListener('input', updateTotalPercentage);
+    prizeItem.querySelector('.remove-prize-btn').addEventListener('click', () => {
+        if (document.querySelectorAll('.prize-item').length > 1) {
+            prizeItem.remove();
+            updateTotalPercentage();
+        } else {
+            showNotification('يجب أن يكون هناك جائزة واحدة على الأقل', 'error');
+        }
+    });
+    
+    updateTotalPercentage();
+}
+
+addPrizeBtn.addEventListener('click', addPrizeItem);
+
+// Add event listeners to existing prize items
+document.querySelectorAll('.prize-percentage').forEach(input => {
+    input.addEventListener('input', updateTotalPercentage);
+});
+
+// Add event listeners to existing remove buttons
+document.querySelectorAll('.remove-prize-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const prizeItem = this.closest('.prize-item');
+        if (document.querySelectorAll('.prize-item').length > 1) {
+            prizeItem.remove();
+            updateTotalPercentage();
+        } else {
+            showNotification('يجب أن يكون هناك جائزة واحدة على الأقل', 'error');
+        }
+    });
+});
+
+// Initial update
+updateTotalPercentage();
+
+/**
  * Handle form submission
  */
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    
+    // Collect prizes with percentages
+    const prizes = [];
+    const percentages = [];
+    document.querySelectorAll('.prize-item').forEach(item => {
+        const name = item.querySelector('.prize-name').value.trim();
+        const percentage = parseInt(item.querySelector('.prize-percentage').value);
+        if (name && percentage) {
+            prizes.push(name);
+            percentages.push(percentage);
+        }
+    });
+    
+    if (prizes.length === 0) {
+        showNotification('يجب إضافة جائزة واحدة على الأقل', "error");
+        return;
+    }
     
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
@@ -156,23 +407,52 @@ form.addEventListener("submit", async (e) => {
 
     try {
         const formData = new FormData(form);
+        // Get type and customType
+        const typeValue = formData.get('type') || document.querySelector('[name="type"]')?.value || 'other';
+        const customTypeValue = formData.get('customType') || '';
+        
         const data = {
             company: formData.get('company'),
-            type: formData.get('type'),
-            customType: formData.get('customType'),
+            type: typeValue,
+            customType: typeValue === 'other' ? customTypeValue : '',
             email: formData.get('email'),
             phone: formData.get('phone'),
-            prizes: formData.get('prizes')
+            prizes: prizes,
+            prize_percentages: percentages
         };
+
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (!csrfToken) {
+            showNotification('خطأ في التحقق من الأمان. يرجى تحديث الصفحة والمحاولة مرة أخرى', "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
 
         const response = await fetch('{% url "companies:register" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(data)
         });
+
+        // Check if response is ok
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server error:', response.status, errorText);
+            try {
+                const errorData = JSON.parse(errorText);
+                showNotification(errorData.message || 'حدث خطأ في الخادم', "error");
+            } catch (e) {
+                showNotification(`حدث خطأ في الخادم (${response.status})`, "error");
+            }
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
 
         const result = await response.json();
 
@@ -188,7 +468,8 @@ form.addEventListener("submit", async (e) => {
         }
 
     } catch (error) {
-        showNotification("حدث خطأ في الاتصال", "error");
+        console.error('Error submitting form:', error);
+        showNotification(`حدث خطأ في الاتصال: ${error.message || 'يرجى المحاولة مرة أخرى'}`, "error");
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
     }

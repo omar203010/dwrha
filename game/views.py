@@ -7,52 +7,107 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.db.models import Count
+from django.conf import settings
 from companies.models import Company
 from .models import GameSpin
 import json
 import random
+import logging
 from datetime import timedelta
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 
 def select_weighted_prize(company, prizes):
     """
-    Select a prize using weighted random algorithm to ensure fair distribution.
+    Select a prize using weighted random algorithm based on percentages.
     
     Algorithm:
-    1. Calculate recent prize frequency (last 100 spins)
-    2. Give higher weights to less frequently won prizes
-    3. Ensure randomness but prevent over-repetition
-    4. Use exponential decay for recent frequency to balance fairness and unpredictability
+    1. Get prize percentages from company notes (if available)
+    2. Use percentages directly as weights (higher percentage = higher chance)
+    3. Normalize weights to ensure they sum to 1
+    4. Select prize based on weighted random
+    
+    The percentages represent the probability of winning each prize:
+    - Higher percentage = higher chance to win
+    - Lower percentage = lower chance to win
+    
+    Returns:
+        str: The selected prize name
     """
-    # Get recent spins for this company (last 100 spins)
-    recent_limit = 100
-    recent_spins = GameSpin.objects.filter(
-        company=company
-    ).order_by('-created_at')[:recent_limit]
+    # Ensure prizes list is not empty
+    if not prizes:
+        logger.error(f"Company {company.name} has no prizes")
+        return None
     
-    # Count recent occurrences of each prize
-    prize_counts = {}
-    for spin in recent_spins:
-        prize = spin.prize
-        prize_counts[prize] = prize_counts.get(prize, 0) + 1
+    # Try to get prize percentages from notes
+    prize_percentages = None
+    using_custom_percentages = False
     
-    # Calculate base weight for each prize (inverse of recent frequency)
-    # Add 1 to avoid division by zero and give each prize a minimum weight
-    weights = []
-    for prize in prizes:
-        recent_count = prize_counts.get(prize, 0)
-        # Weight formula: 1 / (count + 1)^2
-        # This gives exponentially lower weight to frequently won prizes
-        weight = 1 / ((recent_count + 1) ** 1.5)
-        weights.append(weight)
+    if company.notes:
+        try:
+            notes_data = json.loads(company.notes)
+            if 'prize_percentages' in notes_data:
+                prize_percentages = notes_data['prize_percentages']
+                using_custom_percentages = True
+                logger.info(f"Company {company.name}: Using custom percentages: {prize_percentages}")
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.warning(f"Company {company.name}: Could not parse prize percentages from notes: {e}")
+            pass
+    
+    # If no percentages stored, use equal distribution
+    if not prize_percentages or len(prize_percentages) != len(prizes):
+        # Default: equal percentages
+        equal_percentage = 100 / len(prizes)
+        prize_percentages = [equal_percentage] * len(prizes)
+        using_custom_percentages = False
+        logger.info(f"Company {company.name}: Using equal distribution ({equal_percentage}% each)")
+    
+    # Ensure prize_percentages has the same length as prizes
+    if len(prize_percentages) != len(prizes):
+        logger.warning(f"Company {company.name}: Prize percentages length mismatch. Prizes: {len(prizes)}, Percentages: {len(prize_percentages)}")
+        # Adjust percentages to match prizes
+        equal_percentage = 100 / len(prizes)
+        prize_percentages = [equal_percentage] * len(prizes)
+        using_custom_percentages = False
+    
+    # Convert percentages to weights (0-1 range)
+    # Higher percentage = higher weight = higher probability
+    # The percentages are already normalized to sum to 100, but we normalize again
+    # to ensure accuracy even if there are slight rounding errors
+    weights = [float(p) / 100.0 for p in prize_percentages]
     
     # Normalize weights to sum to 1 (probability distribution)
+    # This ensures that if percentages don't sum to exactly 100, they're still valid
+    # This also handles cases where percentages sum to 300% or any other value
     total_weight = sum(weights)
     if total_weight > 0:
-        weights = [w / total_weight for w in weights]
+        # Normalize: divide each weight by total to get probabilities that sum to 1
+        normalized_weights = [w / total_weight for w in weights]
+    else:
+        # Fallback: equal weights if all are zero
+        logger.warning(f"Company {company.name}: All weights are zero, using equal distribution")
+        normalized_weights = [1.0 / len(prizes)] * len(prizes)
+    
+    # Log the weights and prizes for debugging
+    if settings.DEBUG:
+        logger.debug(f"Company {company.name} - Prize selection weights:")
+        for prize, weight, percentage in zip(prizes, normalized_weights, prize_percentages):
+            logger.debug(f"  {prize}: {percentage}% (weight: {weight:.4f})")
     
     # Select prize based on weighted random
-    selected_prize = random.choices(prizes, weights=weights, k=1)[0]
+    # random.choices uses weights directly - higher weight = higher probability
+    selected_prize = random.choices(prizes, weights=normalized_weights, k=1)[0]
+    
+    # Find the index of selected prize for logging
+    selected_index = prizes.index(selected_prize) if selected_prize in prizes else -1
+    
+    logger.info(
+        f"Company {company.name}: Selected prize '{selected_prize}' "
+        f"(index: {selected_index}, percentage: {prize_percentages[selected_index] if selected_index >= 0 else 'N/A'}%, "
+        f"weight: {normalized_weights[selected_index] if selected_index >= 0 else 'N/A':.4f})"
+    )
     
     return selected_prize
 
@@ -61,11 +116,25 @@ def play_game(request, slug):
     """Game page view"""
     company = get_object_or_404(Company, slug=slug)
     
+    # Get and normalize prizes (remove extra spaces) to ensure consistency
+    prizes = company.get_prizes_list()
+    prizes = [str(p).strip() for p in prizes if p]  # Normalize and filter empty
+    
+    # Get colors
+    colors = company.get_colors_list()
+    
+    # Log prizes for debugging
+    if settings.DEBUG:
+        logger.debug(f"Company {company.slug} - Play page loaded:")
+        logger.debug(f"  Prizes: {prizes}")
+        logger.debug(f"  Colors: {colors}")
+        logger.debug(f"  Is active: {company.is_currently_active}")
+    
     # Always show the play page, but pass activation status
     context = {
         'company': company,
-        'prizes': company.get_prizes_list(),
-        'colors': company.get_colors_list(),
+        'prizes': prizes,  # Already normalized
+        'colors': colors,
         'status': company.status,
         'is_active': company.is_currently_active,
         'activation_end_time': company.activation_end_time
@@ -107,16 +176,42 @@ def spin_wheel(request, slug):
                 'message': 'رقم الجوال غير صحيح. يجب أن يبدأ بـ 05 ويحتوي على 10 أرقام أو تركه فارغاً'
             }, status=400)
         
-        # Get prizes
+        # Get prizes and normalize them (remove extra spaces)
         prizes = company.get_prizes_list()
         if not prizes:
+            logger.error(f"Company {company.slug}: No prizes available")
             return JsonResponse({
                 'success': False,
                 'message': 'لا توجد جوائز متاحة'
             }, status=400)
         
-        # Select random prize using weighted algorithm to prevent over-repetition
+        # Normalize prizes (trim whitespace) to ensure matching with frontend
+        prizes = [str(p).strip() for p in prizes if p]
+        
+        if not prizes:
+            logger.error(f"Company {company.slug}: All prizes are empty after normalization")
+            return JsonResponse({
+                'success': False,
+                'message': 'لا توجد جوائز صالحة'
+            }, status=400)
+        
+        # Select random prize using weighted algorithm based on percentages
         selected_prize = select_weighted_prize(company, prizes)
+        
+        if not selected_prize:
+            logger.error(f"Company {company.slug}: Failed to select prize")
+            return JsonResponse({
+                'success': False,
+                'message': 'فشل في اختيار الجائزة'
+            }, status=500)
+        
+        # Ensure selected prize is in the prizes list
+        if selected_prize not in prizes:
+            logger.warning(
+                f"Company {company.slug}: Selected prize '{selected_prize}' not in prizes list {prizes}. "
+                f"Using first prize as fallback."
+            )
+            selected_prize = prizes[0]
         
         # Get client info
         ip_address = request.META.get('REMOTE_ADDR')

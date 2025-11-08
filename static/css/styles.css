@@ -168,6 +168,19 @@ input, select, textarea {
   border-radius: 10px;
   font-family: inherit;
   transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure type container and select are full width */
+#typeContainer {
+  width: 100%;
+}
+
+#typeContainer select,
+#typeContainer input {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -403,6 +416,37 @@ input:focus, select:focus, textarea:focus {
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.9);
   font-size: 15px;
+}
+
+.footer-whatsapp-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #25D366;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  text-decoration: none;
+  margin-inline-start: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.footer-whatsapp-button i {
+  font-size: 18px;
+}
+
+.footer-whatsapp-button:hover,
+.footer-whatsapp-button:focus {
+  background: #1ebe5b;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+  transform: translateY(-1px);
+}
+
+.footer-whatsapp-button:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 3px;
 }
 
 .footer-links {
