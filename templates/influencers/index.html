@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}دوّرها | التسجيل للمؤثرين{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+
+<header class="hero">
+    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
+    <h1 class="hero-title fade-in">⭐ دوّرها | منصتك لابتكار تجارب تفاعلية مع متابعيك</h1>
+    <p class="fade-in">سجّل حسابك معنا واحصل على صفحة خاصة مع عجلة تفاعلية وجوائزك الخاصة ✨</p>
+</header>
+
+<!-- Registration Form -->
+<section class="form-section fade-in" id="form">
+    <h2>سجّل اهتمامك</h2>
+    <p class="form-note">⭐ هذه الصفحة مخصصة للمؤثرين فقط</p>
+    
+    <form id="leadForm" class="form">
+        {% csrf_token %}
+        <div class="grid">
+            <label>
+                المنصة الرئيسية
+                <div id="platformContainer" style="width: 100%;">
+                    <select name="platform" id="platformSelect" required style="width: 100%;">
+                        <option value="instagram">إنستغرام</option>
+                        <option value="tiktok">تيك توك</option>
+                        <option value="youtube">يوتيوب</option>
+                        <option value="snapchat">سناب شات</option>
+                        <option value="twitter">تويتر</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
+            </label>
+
+            <label>
+                اسم المؤثر
+                <input name="name" required>
+            </label>
+
+            <label>
+                اسم المستخدم (مثال: @username)
+                <input name="username" placeholder="@username" required>
+            </label>
+
+            <label>
+                البريد الإلكتروني
+                <input type="email" name="email" required>
+            </label>
+
+            <label>
+                رقم التواصل
+                <input name="phone">
+            </label>
+
+            <label>
+                عدد المتابعين
+                <input type="number" name="followers_count" min="0" placeholder="0">
+            </label>
+
+            <label class="full">
+                رابط الملف الشخصي (اختياري)
+                <input type="url" name="profile_url" placeholder="https://...">
+            </label>
+
+            <label class="full">
+                الجوائز واحتمالات الفوز (النسبة المئوية)
+                <small style="display: block; color: #6c757d; margin-bottom: 10px; font-size: 13px;">
+                    💡 كلما زادت النسبة زاد احتمال الفوز بالجائزة (من 1% إلى 100%)
+                </small>
+                <div id="prizesContainer" style="margin-top: 10px;">
+                    <div class="prize-item" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
+                            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-align: center; font-size: 14px;">
+                                <span style="font-weight: bold; color: #6A3FA0;">%</span>
+                            </div>
+                            <button type="button" class="remove-prize-btn" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">حذف</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="addPrizeBtn" style="margin-top: 10px; padding: 8px 15px; background: #6A3FA0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">+ إضافة جائزة</button>
+                <div id="totalPercentage" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-weight: bold; color: #1565c0; text-align: center;">
+                    المجموع: <span id="totalPercentValue">50</span>% (سيتم تطبيع النسب تلقائياً)
+                </div>
+            </label>
+        </div>
+
+        <button type="submit" class="btn primary">إرسال</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/**
+ * Show notification message
+ */
+function showNotification(message, type = "info") {
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#2ecc71' : '#3498db'};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10000;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        ">
+            ${message}
+        </div>
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification) {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+/**
+ * Handle prize management
+ */
+const prizesContainer = document.getElementById('prizesContainer');
+const addPrizeBtn = document.getElementById('addPrizeBtn');
+const totalPercentValue = document.getElementById('totalPercentValue');
+
+function updateTotalPercentage() {
+    const percentages = Array.from(document.querySelectorAll('.prize-percentage'))
+        .map(input => parseInt(input.value) || 0);
+    const total = percentages.reduce((sum, val) => sum + val, 0);
+    totalPercentValue.textContent = total;
+    
+    const totalDiv = document.getElementById('totalPercentage');
+    if (total > 0) {
+        totalDiv.style.background = '#e3f2fd';
+        totalDiv.style.color = '#1565c0';
+        totalDiv.innerHTML = `المجموع: <span id="totalPercentValue">${total}</span>% (سيتم تطبيع النسب تلقائياً)`;
+    } else {
+        totalDiv.style.background = '#fff3cd';
+        totalDiv.style.color = '#856404';
+        totalDiv.innerHTML = `المجموع: <span id="totalPercentValue">0</span>% (يجب إدخال نسب مئوية)`;
+    }
+}
+
+function addPrizeItem() {
+    const prizeItem = document.createElement('div');
+    prizeItem.className = 'prize-item';
+    prizeItem.style.cssText = 'margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; position: relative;';
+    
+    prizeItem.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
+            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-align: center; font-size: 14px;">
+                <span style="font-weight: bold; color: #6A3FA0;">%</span>
+            </div>
+            <button type="button" class="remove-prize-btn" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">حذف</button>
+        </div>
+    `;
+    
+    prizesContainer.appendChild(prizeItem);
+    
+    prizeItem.querySelector('.prize-percentage').addEventListener('input', updateTotalPercentage);
+    prizeItem.querySelector('.remove-prize-btn').addEventListener('click', () => {
+        if (document.querySelectorAll('.prize-item').length > 1) {
+            prizeItem.remove();
+            updateTotalPercentage();
+        } else {
+            showNotification('يجب أن يكون هناك جائزة واحدة على الأقل', 'error');
+        }
+    });
+    
+    updateTotalPercentage();
+}
+
+addPrizeBtn.addEventListener('click', addPrizeItem);
+
+// Add event listeners to existing prize items
+document.querySelectorAll('.prize-percentage').forEach(input => {
+    input.addEventListener('input', updateTotalPercentage);
+});
+
+document.querySelectorAll('.remove-prize-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const prizeItem = this.closest('.prize-item');
+        if (document.querySelectorAll('.prize-item').length > 1) {
+            prizeItem.remove();
+            updateTotalPercentage();
+        } else {
+            showNotification('يجب أن يكون هناك جائزة واحدة على الأقل', 'error');
+        }
+    });
+});
+
+updateTotalPercentage();
+
+// Override form submission for influencers
+const form = document.getElementById("leadForm");
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    // Collect prizes with percentages
+    const prizes = [];
+    const percentages = [];
+    document.querySelectorAll('.prize-item').forEach(item => {
+        const name = item.querySelector('.prize-name').value.trim();
+        const percentage = parseInt(item.querySelector('.prize-percentage').value);
+        if (name && percentage) {
+            prizes.push(name);
+            percentages.push(percentage);
+        }
+    });
+    
+    if (prizes.length === 0) {
+        showNotification('يجب إضافة جائزة واحدة على الأقل', "error");
+        return;
+    }
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'جاري التسجيل...';
+
+    try {
+        const formData = new FormData(form);
+        const platformValue = formData.get('platform') || document.querySelector('[name="platform"]')?.value || 'other';
+        const customPlatformValue = formData.get('customPlatform') || '';
+        
+        const data = {
+            name: formData.get('name'),
+            platform: platformValue,
+            customPlatform: platformValue === 'other' ? customPlatformValue : '',
+            username: formData.get('username'),
+            profile_url: formData.get('profile_url'),
+            followers_count: formData.get('followers_count') || 0,
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            prizes: prizes,
+            prize_percentages: percentages
+        };
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (!csrfToken) {
+            showNotification('خطأ في التحقق من الأمان. يرجى تحديث الصفحة والمحاولة مرة أخرى', "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+
+        const response = await fetch('{% url "influencers:register" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            try {
+                const errorData = JSON.parse(errorText);
+                showNotification(errorData.message || 'حدث خطأ في الخادم', "error");
+            } catch (e) {
+                showNotification(`حدث خطأ في الخادم (${response.status})`, "error");
+            }
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(result.message || 'تم إرسال طلبك بنجاح', "success");
+            setTimeout(() => {
+                if (result.redirect_url) {
+                    window.location.href = result.redirect_url;
+                } else {
+                    window.location.href = `/influencers/thanks/${result.influencer_id}/`;
+                }
+            }, 2000);
+        } else {
+            showNotification(result.message, "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+
+    } catch (error) {
+        console.error('Error submitting form:', error);
+        showNotification(`حدث خطأ في الاتصال: ${error.message || 'يرجى المحاولة مرة أخرى'}`, "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+</script>
+{% endblock %}
+

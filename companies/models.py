@@ -62,7 +62,6 @@ class Company(models.Model):
     
     # Contact Information
     email = models.EmailField(
-        unique=True,
         verbose_name="البريد الإلكتروني"
     )
     phone = models.CharField(

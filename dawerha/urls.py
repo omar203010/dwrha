@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('companies.urls')),
     path('game/', include('game.urls')),
+    path('influencers/', include('influencers.urls')),
 ]
 
 if settings.DEBUG:

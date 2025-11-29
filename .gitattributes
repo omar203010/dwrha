@@ -1,0 +1,27 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force LF line endings for shell scripts
+*.sh text eol=lf
+
+# Force LF line endings for Python files
+*.py text eol=lf
+
+# Database files are binary
+*.db binary
+*.sqlite3 binary
+*.sql binary
+
+# Images are binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.svg binary
+
+# Archives are binary
+*.zip binary
+*.tar binary
+*.gz binary
+

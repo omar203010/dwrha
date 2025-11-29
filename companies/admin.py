@@ -8,7 +8,12 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils import timezone
+from django.http import HttpResponse
 import json
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
+from datetime import datetime
 from .models import Company, ActivationSchedule
 from .utils import format_riyadh_datetime, format_arabic_datetime
 
@@ -291,7 +296,7 @@ class CompanyAdmin(admin.ModelAdmin):
         }),
     )
     
-    actions = ['activate_companies', 'deactivate_companies', 'activate_by_schedule', 'delete_selected']
+    actions = ['activate_companies', 'deactivate_companies', 'activate_by_schedule', 'export_to_excel', 'delete_selected']
     
     def final_type(self, obj):
         return obj.final_type
@@ -684,6 +689,134 @@ class CompanyAdmin(admin.ModelAdmin):
     
     activate_by_schedule.short_description = '📅 تفعيل حسب الجدولة (يتحقق من الأيام والأوقات)'
     
+    def changelist_view(self, request, extra_context=None):
+        """Override changelist to add export button"""
+        # Check if this is an export request
+        if 'action' in request.POST and request.POST['action'] == 'export_to_excel':
+            # Get all items (or selected items)
+            selected_ids = request.POST.getlist('_selected_action')
+            if selected_ids:
+                queryset = self.get_queryset(request).filter(pk__in=selected_ids)
+            else:
+                # Export all if nothing selected
+                queryset = self.get_queryset(request)
+            return self.export_to_excel(request, queryset)
+        
+        extra_context = extra_context or {}
+        extra_context['show_export_button'] = True
+        extra_context['export_action_name'] = 'export_to_excel'
+        return super().changelist_view(request, extra_context)
+    
+    def export_to_excel(self, request, queryset):
+        """Export companies to Excel"""
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "الشركات"
+        
+        # Define headers in Arabic
+        headers = [
+            'ID',
+            'الاسم',
+            'الاسم المختصر (Slug)',
+            'النوع',
+            'البريد الإلكتروني',
+            'رقم الجوال',
+            'الحالة',
+            'مفعل',
+            'نوع التفعيل',
+            'عدد ساعات التفعيل',
+            'وقت بداية التفعيل',
+            'وقت نهاية التفعيل',
+            'عدد الجداول',
+            'عدد الجوائز',
+            'تاريخ الإنشاء',
+            'تاريخ التحديث',
+            'تاريخ الموافقة'
+        ]
+        
+        # Style for headers
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill(start_color="6A3FA0", end_color="6A3FA0", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Write headers
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Write data
+        row_num = 2
+        for company in queryset.prefetch_related('schedules'):
+            prizes = company.get_prizes_list()
+            
+            ws.cell(row=row_num, column=1, value=company.id)
+            ws.cell(row=row_num, column=2, value=company.name)
+            ws.cell(row=row_num, column=3, value=company.slug)
+            ws.cell(row=row_num, column=4, value=company.final_type)
+            ws.cell(row=row_num, column=5, value=company.email or '-')
+            ws.cell(row=row_num, column=6, value=company.phone or '-')
+            ws.cell(row=row_num, column=7, value=company.get_status_display())
+            ws.cell(row=row_num, column=8, value='نعم' if company.is_active else 'لا')
+            ws.cell(row=row_num, column=9, value=company.activation_type_display().replace('<span style="color: #', '').split('>')[-1].split('<')[0] if hasattr(company, 'activation_type_display') else company.activation_status_display)
+            ws.cell(row=row_num, column=10, value=company.calculated_active_hours)
+            
+            if company.activation_start_time:
+                ws.cell(row=row_num, column=11, value=format_arabic_datetime(company.activation_start_time))
+            else:
+                ws.cell(row=row_num, column=11, value='-')
+            
+            if company.activation_end_time:
+                ws.cell(row=row_num, column=12, value=format_arabic_datetime(company.activation_end_time))
+            else:
+                ws.cell(row=row_num, column=12, value='-')
+            
+            ws.cell(row=row_num, column=13, value=company.schedules.count())
+            ws.cell(row=row_num, column=14, value=len(prizes))
+            
+            if company.created_at:
+                ws.cell(row=row_num, column=15, value=format_arabic_datetime(company.created_at))
+            else:
+                ws.cell(row=row_num, column=15, value='-')
+            
+            if company.updated_at:
+                ws.cell(row=row_num, column=16, value=format_arabic_datetime(company.updated_at))
+            else:
+                ws.cell(row=row_num, column=16, value='-')
+            
+            if company.approved_at:
+                ws.cell(row=row_num, column=17, value=format_arabic_datetime(company.approved_at))
+            else:
+                ws.cell(row=row_num, column=17, value='-')
+            
+            row_num += 1
+        
+        # Auto-adjust column widths
+        for col_num in range(1, len(headers) + 1):
+            column_letter = get_column_letter(col_num)
+            max_length = 0
+            for row in ws[column_letter]:
+                try:
+                    if row.value:
+                        max_length = max(max_length, len(str(row.value)))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Create HTTP response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'الشركات_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Save workbook to response
+        wb.save(response)
+        return response
+    
+    export_to_excel.short_description = "📊 تصدير البيانات المحددة إلى Excel"
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related()
@@ -838,7 +971,7 @@ class ActivationScheduleAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('company')
     
-    actions = ['activate_selected_schedules', 'deactivate_selected_schedules']
+    actions = ['activate_selected_schedules', 'deactivate_selected_schedules', 'export_to_excel']
     
     def activate_selected_schedules(self, request, queryset):
         """Activate selected schedules"""
@@ -851,3 +984,121 @@ class ActivationScheduleAdmin(admin.ModelAdmin):
         count = queryset.update(is_active=False)
         self.message_user(request, f'تم إيقاف {count} جدولة')
     deactivate_selected_schedules.short_description = 'إيقاف الجدولة المحددة'
+    
+    def changelist_view(self, request, extra_context=None):
+        """Override changelist to add export button"""
+        # Check if this is an export request
+        if 'action' in request.POST and request.POST['action'] == 'export_to_excel':
+            # Get all items (or selected items)
+            selected_ids = request.POST.getlist('_selected_action')
+            if selected_ids:
+                queryset = self.get_queryset(request).filter(pk__in=selected_ids)
+            else:
+                # Export all if nothing selected
+                queryset = self.get_queryset(request)
+            return self.export_to_excel(request, queryset)
+        
+        extra_context = extra_context or {}
+        extra_context['show_export_button'] = True
+        extra_context['export_action_name'] = 'export_to_excel'
+        return super().changelist_view(request, extra_context)
+    
+    def export_to_excel(self, request, queryset):
+        """Export activation schedules to Excel"""
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "جداول التفعيل"
+        
+        # Define headers in Arabic
+        headers = [
+            'ID',
+            'اسم الشركة',
+            'البريد الإلكتروني',
+            'السبت',
+            'الأحد',
+            'الاثنين',
+            'الثلاثاء',
+            'الأربعاء',
+            'الخميس',
+            'الجمعة',
+            'ساعة البداية',
+            'ساعة النهاية',
+            'المدة (ساعات)',
+            'مفعلة',
+            'آخر تفعيل',
+            'تاريخ الإنشاء',
+            'تاريخ التحديث'
+        ]
+        
+        # Style for headers
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill(start_color="17a2b8", end_color="17a2b8", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Write headers
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Write data
+        row_num = 2
+        for schedule in queryset.select_related('company'):
+            ws.cell(row=row_num, column=1, value=schedule.id)
+            ws.cell(row=row_num, column=2, value=schedule.company.name)
+            ws.cell(row=row_num, column=3, value=schedule.company.email or '-')
+            ws.cell(row=row_num, column=4, value='نعم' if schedule.saturday else 'لا')
+            ws.cell(row=row_num, column=5, value='نعم' if schedule.sunday else 'لا')
+            ws.cell(row=row_num, column=6, value='نعم' if schedule.monday else 'لا')
+            ws.cell(row=row_num, column=7, value='نعم' if schedule.tuesday else 'لا')
+            ws.cell(row=row_num, column=8, value='نعم' if schedule.wednesday else 'لا')
+            ws.cell(row=row_num, column=9, value='نعم' if schedule.thursday else 'لا')
+            ws.cell(row=row_num, column=10, value='نعم' if schedule.friday else 'لا')
+            ws.cell(row=row_num, column=11, value=f"{schedule.start_hour}:00")
+            ws.cell(row=row_num, column=12, value=f"{schedule.end_hour}:00")
+            ws.cell(row=row_num, column=13, value=schedule.duration_hours)
+            ws.cell(row=row_num, column=14, value='نعم' if schedule.is_active else 'لا')
+            
+            if schedule.last_activation:
+                ws.cell(row=row_num, column=15, value=format_arabic_datetime(schedule.last_activation))
+            else:
+                ws.cell(row=row_num, column=15, value='-')
+            
+            if schedule.created_at:
+                ws.cell(row=row_num, column=16, value=format_arabic_datetime(schedule.created_at))
+            else:
+                ws.cell(row=row_num, column=16, value='-')
+            
+            if schedule.updated_at:
+                ws.cell(row=row_num, column=17, value=format_arabic_datetime(schedule.updated_at))
+            else:
+                ws.cell(row=row_num, column=17, value='-')
+            
+            row_num += 1
+        
+        # Auto-adjust column widths
+        for col_num in range(1, len(headers) + 1):
+            column_letter = get_column_letter(col_num)
+            max_length = 0
+            for row in ws[column_letter]:
+                try:
+                    if row.value:
+                        max_length = max(max_length, len(str(row.value)))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Create HTTP response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'جداول_التفعيل_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Save workbook to response
+        wb.save(response)
+        return response
+    
+    export_to_excel.short_description = "📊 تصدير البيانات المحددة إلى Excel"

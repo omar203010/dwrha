@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}العجلة - {{ influencer.name }} | دوّرها{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+
+<header class="hero">
+    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
+    <h1 class="hero-title fade-in">🎡 عجلة {{ influencer.name }}</h1>
+    <p class="fade-in">دور العجلة لاختيار الجائزة والفائز بشكل عشوائي ✨</p>
+</header>
+
+<!-- Main Content -->
+<main class="stage">
+    <!-- Statistics Boxes -->
+    <div class="stats-container fade-in" style="display: flex; gap: 20px; justify-content: center; margin: 30px auto; max-width: 800px; flex-wrap: wrap;">
+        <div class="stat-box" style="background: linear-gradient(135deg, #6A3FA0 0%, #8C59C4 100%); color: white; padding: 25px 40px; border-radius: 15px; box-shadow: 0 8px 20px rgba(106, 63, 160, 0.3); text-align: center; min-width: 200px;">
+            <div style="font-size: 48px; font-weight: bold; margin-bottom: 10px;" id="participantsCount">{{ participants_count }}</div>
+            <div style="font-size: 18px; opacity: 0.9;">👥 عدد المشاركين</div>
+        </div>
+        <div class="stat-box" style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8B5A 100%); color: white; padding: 25px 40px; border-radius: 15px; box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3); text-align: center; min-width: 200px;">
+            <div style="font-size: 48px; font-weight: bold; margin-bottom: 10px;" id="prizesCount">{{ prizes|length }}</div>
+            <div style="font-size: 18px; opacity: 0.9;">🎁 عدد الجوائز</div>
+        </div>
+    </div>
+    
+    <!-- Wheel Section -->
+    <div id="wheelSection" class="wheel-wrap fade-in" style="margin-top:30px;">
+        <div class="needle"></div>
+        <canvas id="wheelCanvas" width="560" height="560"></canvas>
+        <button id="spinBtn" class="btn primary">دور العجلة 🎡</button>
+        <div id="resultText" class="result"></div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Game data
+const influencerSlug = "{{ influencer.slug }}";
+const prizes = {{ prizes|safe }}.map(p => (p || '').toString().trim()).filter(p => p);
+const colors = {{ colors|safe }};
+
+// DOM Elements
+const wheelSection = document.getElementById("wheelSection");
+const canvas = document.getElementById("wheelCanvas");
+const ctx = canvas?.getContext("2d");
+const spinBtn = document.getElementById("spinBtn");
+const resultText = document.getElementById("resultText");
+const participantsCountEl = document.getElementById("participantsCount");
+const prizesCountEl = document.getElementById("prizesCount");
+
+let spinning = false;
+let rotation = 0;
+let animationFrame = null;
+let remainingPrizesCount = prizes.length;
+
+/**
+ * Draw Wheel
+ */
+function drawWheel() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const numSeg = prizes.length;
+    const arc = (2 * Math.PI) / numSeg;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = canvas.width / 2 - 8;
+
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(rotation);
+
+    for (let i = 0; i < numSeg; i++) {
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, i * arc, (i + 1) * arc);
+        ctx.lineTo(0, 0);
+        ctx.fill();
+        
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.rotate(i * arc + arc / 2);
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "right";
+        ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+        
+        const maxWidth = radius - 50;
+        const prizeText = prizes[i];
+        let fontSize = 20;
+        ctx.font = `bold ${fontSize}px Cairo`;
+        
+        let textWidth = ctx.measureText(prizeText).width;
+        
+        if (textWidth > maxWidth) {
+            fontSize = Math.max(12, Math.floor((maxWidth / textWidth) * fontSize));
+            ctx.font = `bold ${fontSize}px Cairo`;
+            textWidth = ctx.measureText(prizeText).width;
+        }
+        
+        if (textWidth > maxWidth) {
+            const words = prizeText.split(' ');
+            const lines = [];
+            let currentLine = '';
+            
+            for (let word of words) {
+                const testLine = currentLine ? currentLine + ' ' + word : word;
+                const testWidth = ctx.measureText(testLine).width;
+                
+                if (testWidth > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            
+            const lineHeight = fontSize + 4;
+            const totalHeight = lines.length * lineHeight;
+            const startY = -(totalHeight / 2) + (lineHeight / 2);
+            
+            lines.forEach((line, lineIndex) => {
+                ctx.fillText(line, radius - 20, startY + (lineIndex * lineHeight));
+            });
+        } else {
+            ctx.fillText(prizeText, radius - 20, 10);
+        }
+        
+        ctx.restore();
+    }
+    
+    ctx.restore();
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+    ctx.fillStyle = "#2F1D52";
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+}
+
+/**
+ * Spin Wheel
+ */
+async function spinWheel() {
+    if (spinning) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    spinBtn.textContent = 'جاري الدوران... ⏳';
+    resultText.innerHTML = '';
+
+    try {
+        const response = await fetch(`/influencers/spin/${influencerSlug}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        });
+
+        const result = await response.json();
+        
+        if (!result.success) {
+            alert(result.message || 'حدث خطأ أثناء الدوران');
+            spinning = false;
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'دور العجلة 🎡';
+            return;
+        }
+
+        const wonPrize = (result.prize || '').trim();
+        const winner = result.winner;
+        
+        // Find prize index
+        const normalizedPrizes = prizes.map(p => (p || '').toString().trim());
+        let prizeIndex = normalizedPrizes.indexOf(wonPrize);
+        
+        if (prizeIndex === -1) {
+            prizeIndex = normalizedPrizes.findIndex(p => p.toLowerCase() === wonPrize.toLowerCase());
+        }
+        
+        if (prizeIndex === -1) {
+            prizeIndex = 0; // Fallback to first prize
+        }
+
+        // Calculate target rotation (prize at top, then rotate to show at bottom)
+        const arc = (2 * Math.PI) / prizes.length;
+        const targetPrizeAngle = prizeIndex * arc + arc / 2;
+        // Position prize at bottom (270 degrees = 3π/2)
+        const targetRotation = (3 * Math.PI / 2) - targetPrizeAngle;
+        // Add multiple full rotations for spinning effect
+        const fullRotations = 5 + Math.random() * 3; // 5-8 full rotations
+        const finalRotation = targetRotation + (fullRotations * 2 * Math.PI);
+
+        // Animate spin
+        const startRotation = rotation;
+        const rotationDiff = finalRotation - startRotation;
+        const duration = 3000; // 3 seconds
+        const startTime = Date.now();
+
+        function animate() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function (ease-out)
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            rotation = startRotation + (rotationDiff * easeOut);
+            drawWheel();
+
+            if (progress < 1) {
+                animationFrame = requestAnimationFrame(animate);
+            } else {
+                // Animation complete
+                spinning = false;
+                spinBtn.disabled = false;
+                spinBtn.textContent = 'دور العجلة مرة أخرى 🎡';
+                
+                // Decrease remaining prizes count
+                remainingPrizesCount = Math.max(0, remainingPrizesCount - 1);
+                prizesCountEl.textContent = remainingPrizesCount;
+                
+                // Update participants count immediately
+                updateParticipantsCount();
+                
+                // Show result
+                resultText.innerHTML = `
+                    <div style="background: #d4edda; padding: 20px; border-radius: 10px; margin-top: 20px; text-align: center; border: 2px solid #28a745;">
+                        <h2 style="color: #155724; margin: 0 0 15px;">🎉 مبروك! 🎉</h2>
+                        <p style="font-size: 18px; margin: 10px 0; color: #155724;">
+                            <strong>الجائزة:</strong> ${wonPrize}
+                        </p>
+                        <div style="background: #fff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            <p style="margin: 5px 0; color: #333;"><strong>الفائز:</strong> ${winner.name}</p>
+                            <p style="margin: 5px 0; color: #333;"><strong>رقم الجوال:</strong> ${winner.phone}</p>
+                            <p style="margin: 5px 0; color: #333;"><strong>حساب التواصل:</strong> ${winner.social_media_account}</p>
+                            <p style="margin: 5px 0; color: #333;"><strong>المدينة:</strong> ${winner.city}</p>
+                        </div>
+                    </div>
+                `;
+                
+                resultText.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        animate();
+
+    } catch (error) {
+        console.error('Error spinning wheel:', error);
+        alert('حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.');
+        spinning = false;
+        spinBtn.disabled = false;
+        spinBtn.textContent = 'دور العجلة 🎡';
+    }
+}
+
+/**
+ * Update participants count
+ */
+async function updateParticipantsCount() {
+    try {
+        const response = await fetch(`/influencers/participants-count/${influencerSlug}/`);
+        const result = await response.json();
+        
+        if (result.success) {
+            participantsCountEl.textContent = result.count;
+        }
+    } catch (error) {
+        console.error('Error updating participants count:', error);
+    }
+}
+
+// Event listeners
+spinBtn.addEventListener('click', spinWheel);
+
+// Update participants count every 5 seconds
+setInterval(updateParticipantsCount, 5000);
+
+// Initial draw
+drawWheel();
+</script>
+{% endblock %}
+

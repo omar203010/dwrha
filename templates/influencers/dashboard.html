@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}لوحة التحكم - {{ influencer.name }} | دوّرها{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+
+<header class="hero">
+    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo">
+    <h1 class="hero-title fade-in">لوحة التحكم</h1>
+    <p class="fade-in">{{ influencer.name }} 📊</p>
+</header>
+
+<!-- Main Content -->
+<main class="stage">
+    <section class="fade-in" style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 12px 40px rgba(106, 63, 160, 0.15); text-align: center;">
+        <h2 style="color: var(--purple); margin-bottom: 20px;">معلومات المؤثر</h2>
+        <div style="margin-bottom: 30px;">
+            <p><strong>الاسم:</strong> {{ influencer.name }}</p>
+            <p><strong>المنصة:</strong> {{ influencer.get_platform_display }}</p>
+            <p><strong>اسم المستخدم:</strong> {{ influencer.username }}</p>
+            <p><strong>البريد الإلكتروني:</strong> {{ influencer.email }}</p>
+            <p><strong>الحالة:</strong> {{ influencer.get_status_display }}</p>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3 style="color: var(--purple); margin-bottom: 20px;">📊 الإحصائيات</h3>
+            <p style="font-size: 18px; margin: 10px 0;"><strong>عدد المسجلين:</strong> {{ participants_count }}</p>
+            <div style="margin-top: 20px;">
+                {% if participants_count > 0 %}
+                    <a href="{% url 'influencers:export_participants' influencer.id %}" class="btn primary" style="display: inline-block; padding: 12px 30px; background: #28a745; text-decoration: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer;">
+                        📊 تصدير بيانات المشاركين إلى Excel
+                    </a>
+                {% else %}
+                    <button disabled style="display: inline-block; padding: 12px 30px; background: #cccccc; border: none; border-radius: 8px; font-weight: bold; color: #666; cursor: not-allowed;">
+                        📊 تصدير بيانات المشاركين إلى Excel
+                    </button>
+                    <p style="color: #999; font-style: italic; margin-top: 10px; font-size: 14px;">لا يوجد مشاركين حتى الآن</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if influencer.is_active %}
+            <div style="margin-top: 30px;">
+                <h3 style="color: var(--purple); margin-bottom: 15px;">🔗 الروابط</h3>
+                <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 2px solid #6A3FA0;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #6A3FA0;">📝 رابط التسجيل للمشاركين:</p>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="registrationLink" value="{{ request.scheme }}://{{ request.get_host }}{{ influencer.registration_url }}" readonly style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                        <button onclick="copyToClipboard('registrationLink')" class="btn primary" style="padding: 10px 20px;">نسخ</button>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #fff5f7; border-radius: 10px; border: 2px solid #FF6B9D;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #FF6B9D;">🎡 رابط العجلة (اختيار الفائز):</p>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="wheelLink" value="{{ request.scheme }}://{{ request.get_host }}{{ influencer.wheel_url }}" readonly style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                        <button onclick="copyToClipboard('wheelLink')" class="btn primary" style="padding: 10px 20px; background: #FF6B9D;">نسخ</button>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px;">
+                    <p style="margin: 0; color: #1565c0; font-size: 14px;">
+                        💡 <strong>رابط التسجيل:</strong> شارك هذا الرابط مع متابعيك للتسجيل<br>
+                        💡 <strong>رابط العجلة:</strong> استخدم هذا الرابط لتدوير العجلة واختيار الفائز عشوائياً
+                    </p>
+                </div>
+            </div>
+        {% else %}
+            <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-top: 30px;">
+                <p style="color: #856404; margin: 0;">⚠️ الحساب غير مفعل حالياً. يرجى التواصل مع فريق دوّرها لتفعيل الحساب. الروابط ستظهر بعد التفعيل في لوحة التحكم.</p>
+            </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999); // For mobile devices
+    document.execCommand('copy');
+    
+    // Show feedback
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'تم النسخ! ✓';
+    button.style.background = '#2ecc71';
+    
+    setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = '';
+    }, 2000);
+}
+</script>
+{% endblock %}

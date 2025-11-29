@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}التسجيل - {{ influencer.name }} | دوّرها{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+
+<header class="hero">
+    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
+    <h1 class="hero-title fade-in">🎉 التسجيل في السحب</h1>
+    <p class="fade-in">سجّل بياناتك لدخول السحب وربح جوائز رائعة من {{ influencer.name }} ✨</p>
+</header>
+
+<!-- Registration Form -->
+<section class="form-section fade-in" id="form">
+    <h2>سجّل بياناتك</h2>
+    
+    <form id="participantForm" class="form">
+        {% csrf_token %}
+        <div class="grid">
+            <label>
+                الاسم
+                <input name="name" required placeholder="اسمك الكامل">
+            </label>
+
+            <label>
+                رقم الجوال
+                <input name="phone" required placeholder="05XXXXXXXX" pattern="05[0-9]{8}">
+                <small style="color: #6c757d; font-size: 12px;">يجب أن يبدأ بـ 05 ويحتوي على 10 أرقام</small>
+            </label>
+
+            <label>
+                حساب التواصل الاجتماعي
+                <input name="social_media_account" required placeholder="@username">
+                <small style="color: #6c757d; font-size: 12px;">مثال: @username</small>
+            </label>
+
+            <label>
+                المدينة
+                <input name="city" required placeholder="المدينة">
+            </label>
+        </div>
+
+        <button type="submit" class="btn primary">سجّل الآن 🎁</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showNotification(message, type = "info") {
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#2ecc71' : '#3498db'};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10000;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        ">
+            ${message}
+        </div>
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification) {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+const form = document.getElementById("participantForm");
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'جاري التسجيل...';
+
+    try {
+        const formData = new FormData(form);
+        
+        const data = {
+            name: formData.get('name'),
+            phone: formData.get('phone'),
+            social_media_account: formData.get('social_media_account'),
+            city: formData.get('city')
+        };
+
+        // Validate phone format
+        const phonePattern = /^05[0-9]{8}$/;
+        if (!phonePattern.test(data.phone)) {
+            showNotification('رقم الجوال غير صحيح. يجب أن يبدأ بـ 05 ويحتوي على 10 أرقام', "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (!csrfToken) {
+            showNotification('خطأ في التحقق من الأمان. يرجى تحديث الصفحة والمحاولة مرة أخرى', "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+
+        const response = await fetch('{% url "influencers:register_participant_submit" slug=influencer.slug %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            try {
+                const errorData = JSON.parse(errorText);
+                showNotification(errorData.message || 'حدث خطأ في الخادم', "error");
+            } catch (e) {
+                showNotification(`حدث خطأ في الخادم (${response.status})`, "error");
+            }
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(result.message || 'تم التسجيل بنجاح! 🎉', "success");
+            setTimeout(() => {
+                form.reset();
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }, 2000);
+        } else {
+            showNotification(result.message, "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+
+    } catch (error) {
+        console.error('Error submitting form:', error);
+        showNotification(`حدث خطأ في الاتصال: ${error.message || 'يرجى المحاولة مرة أخرى'}`, "error");
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+</script>
+{% endblock %}
+

@@ -10,7 +10,9 @@
         <h1>🎉 شكرًا! تم استلام طلبك بنجاح</h1>
         <p>سيتواصل معك فريق <strong>دوّرها</strong> قريبًا لتفعيل التجربة في منشأتك.</p>
         
-
+        <div class="back-to-home">
+            <a href="{% url 'companies:home' %}" class="home-btn">العودة للصفحة الرئيسية</a>
+        </div>
     </div>
 </div>
 
@@ -130,6 +132,36 @@
     font-style: italic;
 }
 
+.back-to-home {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid rgba(106, 63, 160, 0.1);
+}
+
+.home-btn {
+    display: inline-block;
+    background: var(--purple);
+    color: #fff;
+    text-decoration: none;
+    padding: 15px 40px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border: 2px solid var(--purple);
+}
+
+.home-btn:hover {
+    background: #fff;
+    color: var(--purple);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(106, 63, 160, 0.3);
+}
+
+.home-btn:active {
+    transform: translateY(0);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .game-link-container {
@@ -153,6 +185,12 @@
     
     .thankyou-container p {
         font-size: 16px;
+    }
+    
+    .home-btn {
+        width: 100%;
+        padding: 12px 30px;
+        font-size: 14px;
     }
 }
 </style>

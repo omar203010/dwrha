@@ -132,15 +132,20 @@ dmypy.json
 .pyre/
 
 # Production files
-staticfiles/*
+staticfiles/
 !staticfiles/.gitkeep
-media/*
+media/
 !media/.gitkeep
 *.sql
 *.db
 *.bak
 *.tmp
 *.temp
+
+# Backup directories
+backup_*/
+*_backup/
+*_old/
 
 # IDE files
 .vscode/
@@ -153,6 +158,82 @@ media/*
 .DS_Store
 Thumbs.db
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
 
+# Database files
+*.sqlite3
+*.sqlite3-journal
+*.db
+*.sql
 
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv/
+*.venv
+
+# Django specific
+/staticfiles/
+/media/
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Project specific
+db.sqlite3
+staticfiles/
+media/
+logs/
+*.log
+
+# Sensitive configuration files
+local_settings.py
+production_settings.py.bak
+*.secret
+*.key
+
+# Migration backups
+migrations/backup_*
+(migrations/)*.pyc
+(migrations/)*__pycache__/
 

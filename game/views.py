@@ -1,19 +1,22 @@
 """
 Views for game app
 """
-from django.shortcuts import render, get_object_or_404
+import json
+import logging
+import random
+import re
+from datetime import timedelta
+
+from django.conf import settings
+from django.db.models import Count
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.utils import timezone
-from django.db.models import Count
-from django.conf import settings
+
 from companies.models import Company
 from .models import GameSpin
-import json
-import random
-import logging
-from datetime import timedelta
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -43,34 +46,21 @@ def select_weighted_prize(company, prizes):
     
     # Try to get prize percentages from notes
     prize_percentages = None
-    using_custom_percentages = False
     
     if company.notes:
         try:
             notes_data = json.loads(company.notes)
             if 'prize_percentages' in notes_data:
                 prize_percentages = notes_data['prize_percentages']
-                using_custom_percentages = True
                 logger.info(f"Company {company.name}: Using custom percentages: {prize_percentages}")
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Company {company.name}: Could not parse prize percentages from notes: {e}")
-            pass
     
-    # If no percentages stored, use equal distribution
+    # If no percentages stored or length mismatch, use equal distribution
     if not prize_percentages or len(prize_percentages) != len(prizes):
-        # Default: equal percentages
         equal_percentage = 100 / len(prizes)
         prize_percentages = [equal_percentage] * len(prizes)
-        using_custom_percentages = False
         logger.info(f"Company {company.name}: Using equal distribution ({equal_percentage}% each)")
-    
-    # Ensure prize_percentages has the same length as prizes
-    if len(prize_percentages) != len(prizes):
-        logger.warning(f"Company {company.name}: Prize percentages length mismatch. Prizes: {len(prizes)}, Percentages: {len(prize_percentages)}")
-        # Adjust percentages to match prizes
-        equal_percentage = 100 / len(prizes)
-        prize_percentages = [equal_percentage] * len(prizes)
-        using_custom_percentages = False
     
     # Convert percentages to weights (0-1 range)
     # Higher percentage = higher weight = higher probability
@@ -168,7 +158,6 @@ def spin_wheel(request, slug):
             }, status=400)
         
         # Validate phone number format (optional)
-        import re
         phone_pattern = r'^05[0-9]{8}$'
         if visitor_phone and not re.match(phone_pattern, visitor_phone):
             return JsonResponse({
@@ -261,7 +250,6 @@ def game_dashboard(request, slug):
     today_spins = spins.filter(created_at__date=today).count()
     
     # This week's spins
-    from datetime import timedelta
     week_ago = today - timedelta(days=7)
     week_spins = spins.filter(created_at__date__gte=week_ago).count()
     
